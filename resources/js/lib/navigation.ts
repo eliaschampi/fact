@@ -24,6 +24,12 @@ export const APP_NAVIGATION: readonly NavigationItem[] = [
         permission: 'products.view',
     },
     {
+        label: 'Clientes',
+        href: '/customers',
+        icon: 'users',
+        permission: 'customers.view',
+    },
+    {
         label: 'Sedes',
         href: '/branches',
         icon: 'building2',

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
         if ($login === '' && $password === '') {
             $this->call(ProductSeeder::class);
+            $this->call(CustomerSeeder::class);
 
             return;
         }
@@ -117,5 +118,6 @@ class DatabaseSeeder extends Seeder
         });
 
         $this->call(ProductSeeder::class);
+        $this->call(CustomerSeeder::class);
     }
 }

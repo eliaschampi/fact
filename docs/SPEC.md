@@ -321,6 +321,23 @@ venta.
   `cost_price` e inventario llegan con V3.
 - Búsqueda por trigram GIN sobre `products.name` y `product_variants.sku`.
 
+### Clientes
+
+El cliente es identidad tributaria, no CRM: `doc_type` Cat. 06 v1
+(`0` otros, `1` DNI, `6` RUC), `doc_number`, `name`. Sin teléfono, email
+ni direcciones en v1. El CPE (V5) lee su snapshot; la fila sigue
+editable.
+
+- DNI = 8 dígitos ≠ `00000000`. RUC = 11 dígitos + dígito verificador
+  módulo 11 (factores `5,4,3,2,7,6,5,4,3,2`; `dv = (11 − resto) % 10`),
+  validado en entrada para no descubrir el error en SUNAT.
+- `UNIQUE (issuer_code, doc_type, doc_number)`. Consumidor final: una
+  fila por emisor, `0` / `00000000`, la crea el sistema; no se edita ni
+  se borra.
+- Factura `01` exige `doc_type='6'`; boleta ≥ 700 PEN exige identidad
+  real (§4 Venta). v1 no consulta el padrón SUNAT.
+- Búsqueda por documento y nombre trgm. Sin campos libres.
+
 ### Inventario (Faztore)
 
 Sparse `(variant_code, branch_code)`. `on_hand` entero. CHECK `>= 0`.

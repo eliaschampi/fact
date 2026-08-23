@@ -7,8 +7,8 @@ sin test no cuenta como hecho. Ley: `docs/SPEC.md`. Hechos: `docs/STATUS.md`.
 
 | Campo                | Valor          |
 | -------------------- | -------------- |
-| Fase                 | V1 cerrado     |
-| Siguiente sesión     | **V2 Cliente** |
+| Fase                 | V2 cerrado     |
+| Siguiente sesión     | **V3 Compras** |
 | Última actualización | 2026-08-23     |
 
 ---
@@ -38,11 +38,31 @@ reactivación (SPEC §4 Catálogo). Checks verdes 2026-08-23: 49 tests /
 
 ---
 
-## Después (orden V2→V5 estricto)
+## V2 — Cliente (cerrado)
+
+**Frase:** el cajero registra DNI/RUC sin salir del ticket.
+
+- [x] Migración `customers`: Cat. 06 v1 (`0`/`1`/`6`), `UNIQUE
+    (issuer_code, doc_type, doc_number)`, trgm en nombre, índice en
+      documento.
+- [x] `Support\RucNumber` (módulo 11, factores 5,4,3,2,7,6,5,4,3,2;
+      `dv = (11 − resto) % 10`, verificado contra stdnum) + validación
+      por tipo de documento en `SaveCustomerRequest`.
+- [x] `SaveCustomer`: consumidor final (`0`/`00000000`) no se crea a
+      mano ni se edita; duplicado = error amigable (savepoint aísla la
+      violación UNIQUE de la transacción exterior).
+- [x] `/customers` (Index/Form) con `customers.view/manage`; seed:
+      consumidor final + DNI + RUC demo.
+
+El diálogo desde el ticket (POS) llega con V5; V2 entrega el registro
+esencial. Checks verdes 2026-08-23: 63 tests / 211 assertions.
+
+---
+
+## Después (orden V3→V5 estricto)
 
 | V   | Frase                                                            |
 | --- | ---------------------------------------------------------------- |
-| 2   | El cajero registra DNI/RUC sin salir del ticket                  |
 | 3   | Compro in_transit, recibo, entra stock con costo promedio        |
 | 4   | Caja = ledger de efectivo (SPEC §4). Supervise; Yape no entra    |
 | 5   | Vendió, cobró, reservó F001-n, firmó XML, CDR fake 0             |

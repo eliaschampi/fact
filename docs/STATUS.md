@@ -3,11 +3,10 @@
 Sólo hechos que el código y los tests demuestran. Decisiones permanentes:
 [`SPEC.md`](SPEC.md). Ejecución: `TASK.md` en la raíz.
 
-**Última verificación:** 2026-08-23 (V0 + V1 Catálogo, con pase de
-integridad).
+**Última verificación:** 2026-08-23 (V0 + V1 Catálogo + V2 Cliente).
 
-`composer run check` verde: 50 tests / 165 assertions · Pint · svelte-check ·
-oxlint · Prettier. `pnpm run build` verde. `down()` de la migración probado;
+`composer run check` verde: 63 tests / 211 assertions · Pint · svelte-check ·
+oxlint · Prettier. `pnpm run build` verde. `down()` de migraciones probado;
 CHECKs, UNIQUE e índices trgm verificados en la base; FKs en `restrict`
 (la variante no se borra ni por cascada).
 
@@ -24,10 +23,11 @@ CHECKs, UNIQUE e índices trgm verificados en la base; FKs en `restrict`
 | Config      | `config/sunat.php` endpoints, plazos, par beta `MODDATOS`/`MODDATOS`; ambiente `beta`/`production`; disco `fiscal`; `LimaDate`; cola database `after_commit`                                                                                                                                                                                                                              |
 | Diagnose    | `php artisan sunat:diagnose` (sin red)                                                                                                                                                                                                                                                                                                                                                    |
 | Catálogo    | `products` + `product_variants`: sku lower único por emisor, `unit_code` Cat. 03 (`NIU`/`ZZ`) y `tax_affectation` Cat. 07 (`10`/`20`/`30`) en la variante, precio `NUMERIC(12,2)` IGV incluido; CHECKs nombrados + trgm GIN; `SaveProduct` (transacción, guard inactivo ⇒ sólo reactivar, variante nunca se borra); `/products` Index+Form con `products.view/manage`; seed demo 10/20/30 |
+| Clientes    | `customers`: Cat. 06 v1 (`0`/`1`/`6`), `UNIQUE (issuer_code, doc_type, doc_number)`, trgm nombre + índice documento; `RucNumber` módulo 11 verificado contra stdnum; `SaveCustomer` con consumidor final no editable y duplicado amigable (savepoint); `/customers` Index+Form con `customers.view/manage`; seed: consumidor final + DNI + RUC                                            |
 
-## No implementado (siguiente: V2)
+## No implementado (siguiente: V3)
 
-Clientes, inventario, compras, caja ledger, ventas, tablas
+Inventario, compras, caja ledger, ventas, tablas
 `fiscal_*`, jobs de envío, PDF binario, GRE de producto, settings de emisor.
 
 Secretos SUNAT se leen de env. `issuers` no guarda PEM ni Clave SOL.
