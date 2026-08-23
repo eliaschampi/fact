@@ -58,7 +58,9 @@ Evidencia local para copiar invariantes (no pegar Kysely):
 
 - stock: `faztore/src/lib/server/repositories/inventory.repository.ts`
   (`ensureInventoryBalanceRow`, `applyInventoryDeltaByVariant`)
-- caja: `faztore/.../cashbox.repository.ts` (`lockCashboxBalance`)
+- caja ledger: `faztore/.../cashbox.repository.ts` + `database/init/01-tables.sql` (`cashbox_movements`)
+- caja permisos/void/vuelto: `aeduca/docs/SPEC.md` §6 + `RecordCashOutflowReturn`
+- caja = efectivo hoy: `coedula/docs/PRODUCT.md` R-01
 - idempotencia: `coedula/.../cashbox-repository.internal.ts`
   (`resolveCashboxRequestReplay`)
 - idiom Laravel: `aeduca/app/Actions`, `aeduca/AGENTS.md`
@@ -263,16 +265,42 @@ de compra y variantes; costo promedio ponderado en `NUMERIC`. `cancel` desde
 Transferencia: 1 variante, origen ≠ destino, inmediata. Inmutable si hay GRE
 ligada. Corrección = transferencia compensatoria + GRE nueva.
 
-### Caja (Faztore + Coedula R-01)
+### Caja
 
-Ledger append-only, scoped al cajero, sin sesión abrir/cerrar. Saldo
-derivado (`SUM` de `active` con `business_date <= hoy Lima`). Nunca DELETE:
-reversión = `reversed` + timestamps + actor.
+Fusión, no copia. Cada hermano aporta una pieza; NecoFact corrige lo que
+rompe un facturador.
 
-Sólo `cash` escribe el ledger. Mixto efectivo+Yape = dos `sale_payments`,
-una entrada de caja por el efectivo.
+| De           | Qué entra                                                                                                                                                       | Qué no entra                                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Faztore      | Ledger único `cashbox_movements`, tipos, CHECKs de alineación, vista diaria, transferencias `CTX-`, caja del **cajero** no de la sede                           | Meter el **total** de la venta si hay un peso `cash`; `Number()`; `source_type`+`source_code` sin FK; `deleted` en egresos |
+| Coedula R-01 | `/cashbox` = efectivo físico; escrituras = hoy Lima (servidor); `request_key`; UI no basta                                                                      | Obligaciones académicas; cobro mixto en la misma pantalla de caja                                                          |
+| Aeduca       | `cashbox.view/manage/supervise`; selector de cajero read-only; Vuelto como **hecho nuevo**; void con motivo; no dejar saldo negativo; sede = metadato de origen | Ítems de pensión; `receipt_number` global como serie; sesiones abrir/cerrar                                                |
 
-Antes de toda salida:
+**Modelo**
+
+- Un cajero = una posición continua. No hay entidad caja, ni abrir/cerrar, ni saldo mutable.
+- `cashbox_movements` es el libro. Saldo = `SUM` de `active` con `business_date <= hoy Lima`.
+- Tipos: `sale` · `purchase` · `manual_income` · `expense` · `outflow_return` · `transfer`.
+- Dirección `in`/`out`. Status `active`/`reversed`. Nunca DELETE.
+- Cabeceras con número humano: `cash_outflows` (`OUT-`) y `cashbox_transfers` (`CTX-`).
+- Vuelto: fila nueva `cash_outflow_returns` (como Aeduca) **y** movimiento `outflow_return` en el ledger. No mutar `returned_amount` en el egreso (Faztore lo hace; se descarta).
+- FKs explícitas en el movimiento, no polimorfismo: `sale_code`, `purchase_code`, `outflow_code`, `transfer_code` nullable + CHECK de “exactamente el dueño que el tipo exige”. `manual_income` no referencia cabecera.
+- `branch_code` en el movimiento es origen inmutable (la venta/compra ya tienen sede). La caja no se filtra por sede.
+
+**Efectivo vs otros medios** — la regla que Faztore rompe y NecoFact no:
+
+| Medio                           | `sale_payments` | `cashbox_movements`      |
+| ------------------------------- | --------------- | ------------------------ |
+| `cash`                          | sí              | sí, `in`, sólo ese monto |
+| `yape` `plin` `transfer` `card` | sí              | no                       |
+| mixto 40 efectivo + 20 Yape     | dos filas       | sólo 40                  |
+
+El resumen diario de `/cashbox` muestra efectivo. El reporte de ventas muestra todos los medios. Nunca una sola cifra mezclada.
+
+**Escrituras**
+
+- `business_date` = hoy Lima, calculado por el servidor. El cliente no envía fecha. (Coedula R-01.)
+- Toda salida toma el lock y luego verifica saldo. Void de un `in` también: no dejar la posición negativa.
 
 ```sql
 SELECT pg_advisory_xact_lock(
@@ -281,7 +309,23 @@ SELECT pg_advisory_xact_lock(
 );
 ```
 
-Egreso y transferencia entre cajeros no emiten CPE.
+- Idempotencia `request_key` en egreso, vuelto y transferencia (misma mecánica que la venta).
+- Egreso y transferencia **no** emiten CPE.
+- No hay “rendición al superadmin” en v1: una transferencia entre cajeros cubre el efectivo que cambia de manos. (Aeduca/Coedula la tienen por cobro escolar; aquí sobra.)
+
+**Permisos y UI (Aeduca, adaptado)**
+
+- `cashbox.view` — hechos propios. `cashbox.manage` — escribe sólo los propios. `cashbox.supervise` — elige otro cajero **sólo lectura**. El selector vive en `/cashbox`; las hijas conservan `?cashier=` y jamás impersonan writes.
+- Tres lecturas en la misma ruta: día (apertura / ingresos / egresos netos / cierre), operaciones en rango (default hoy), reporte mensual. Vista SQL `cashbox_daily_summary` al estilo Faztore (ingresos, egresos, transfer in/out, neto, running).
+- Acciones de fila: detalle siempre; corrección contextual (un egreso no ofrece Vuelto y anular a la vez).
+- Ticket 80 mm de caja es representación operativa (browser), no CPE. El binario PDF es del comprobante SUNAT.
+
+**No copiar**
+
+- Faztore `createSale`: `amount: roundMoney(totalAmount)` al ledger si hay `cashboxPayment`.
+- Faztore `cash_outflows.status = 'deleted'`.
+- Aeduca `payments` con conceptos de matrícula.
+- Sesiones de caja, saldo en columna, backdating.
 
 ### Idempotencia (Coedula)
 

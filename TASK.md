@@ -47,7 +47,7 @@ gravada, la ve en el listado, y un test impide operar la inactiva.
 | --- | ---------------------------------------------------------------- |
 | 2   | El cajero registra DNI/RUC sin salir del ticket                  |
 | 3   | Compro in_transit, recibo, entra stock con costo promedio        |
-| 4   | La caja es el efectivo del cajero; Yape no entra                 |
+| 4   | Caja = ledger de efectivo (SPEC §4). Supervise; Yape no entra    |
 | 5   | Vendió, cobró, reservó F001-n, firmó XML, CDR fake 0             |
 | 6   | Boletas del día se informan con RC                               |
 | 7   | El adquirente descarga XML/PDF de un link firmado                |
@@ -57,5 +57,5 @@ gravada, la ve en el listado, y un test impide operar la inactiva.
 | 11  | Moví stock entre sedes una vez                                   |
 | 12  | Un cliente real factura todos los días                           |
 
-Mecánica SQL y reglas: `docs/SPEC.md` §3–§4. No reabrir archivos
-archivados ni competir esta spec.
+Mecánica SQL y reglas: `docs/SPEC.md` §3–§4 (caja: fusión Faztore ledger +
+Coedula R-01 + Aeduca supervise/vuelto). No competir esta spec.
