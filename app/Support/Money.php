@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use InvalidArgumentException;
 
 final class Money
@@ -13,6 +15,8 @@ final class Money
     public const string UNSIGNED_PATTERN = '/^'.self::DECIMAL_BODY.'$/';
 
     private const string SIGNED_PATTERN = '/^-?'.self::DECIMAL_BODY.'$/';
+
+    private const string NORMALIZABLE_PATTERN = '/^-?\d{1,10}(?:\.\d+)?$/';
 
     public static function toCents(string|int $amount): int
     {
@@ -35,6 +39,22 @@ final class Money
         $absolute = abs($cents);
 
         return sprintf('%s%d.%02d', $sign, intdiv($absolute, 100), $absolute % 100);
+    }
+
+    /**
+     * Bring any validated decimal string to the canonical scale-2 form.
+     */
+    public static function normalize(string $decimal): string
+    {
+        $trimmed = trim($decimal);
+
+        if (! preg_match(self::NORMALIZABLE_PATTERN, $trimmed)) {
+            throw new InvalidArgumentException('Invalid monetary amount.');
+        }
+
+        return BigDecimal::of($trimmed)
+            ->toScale(2, RoundingMode::HalfUp)
+            ->__toString();
     }
 
     public static function fitsDatabase(int $cents): bool

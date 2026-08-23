@@ -3,27 +3,28 @@
 Sólo hechos que el código y los tests demuestran. Decisiones permanentes:
 [`SPEC.md`](SPEC.md). Ejecución: `TASK.md` en la raíz.
 
-**Última verificación:** 2026-08-23 (V0 + hardening + auditoría de fusión).
+**Última verificación:** 2026-08-23 (V0 + V1 Catálogo).
 
-`composer run check` verde: 38 tests / 116 assertions · Pint · svelte-check ·
+`composer run check` verde: 49 tests / 163 assertions · Pint · svelte-check ·
 oxlint · Prettier. `pnpm run build` verde.
 
 ## Implementado
 
-| Área        | Hecho                                                                                                                                                                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Acceso      | `AuthAccount` + `User`; login throttled con dummy-hash; logout invalida sesión                                                                                         |
-| Sedes       | `issuer` + `branches` (`sunat_establishment_code`); selector de sesión; `user_branches` explícito                                                                      |
-| Permisos    | `dominio.view/manage`; grants ∩ role scope; superadmin = catálogo; `Gate::before` + `can()` UX-only                                                                    |
-| Front       | Inertia 3 + Svelte 5 runes + Lumi; shell login/inicio/sedes                                                                                                            |
-| Fiscal core | `TaxMath` (10/20/30, half-up, brick/math); `CpeState`; gateways Greenter; `CacheTokenStore`; `ArtifactStore` inmutable; `Greenter\*` importado sólo en `Support/Sunat` |
-| Tickets     | 98 pending · 0 completed · 99 failed; `queryTicket`/`queryCdr` no lanzan                                                                                               |
-| Config      | `config/sunat.php` endpoints, plazos, par beta `MODDATOS`/`MODDATOS`; ambiente `beta`/`production`; disco `fiscal`; `LimaDate`; cola database `after_commit`           |
-| Diagnose    | `php artisan sunat:diagnose` (sin red)                                                                                                                                 |
+| Área        | Hecho                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Acceso      | `AuthAccount` + `User`; login throttled con dummy-hash; logout invalida sesión                                                                                                                                                                                                                                                                                                            |
+| Sedes       | `issuer` + `branches` (`sunat_establishment_code`); selector de sesión; `user_branches` explícito                                                                                                                                                                                                                                                                                         |
+| Permisos    | `dominio.view/manage`; grants ∩ role scope; superadmin = catálogo; `Gate::before` + `can()` UX-only                                                                                                                                                                                                                                                                                       |
+| Front       | Inertia 3 + Svelte 5 runes + Lumi; shell login/inicio/sedes/productos                                                                                                                                                                                                                                                                                                                     |
+| Fiscal core | `TaxMath` (10/20/30, half-up, brick/math); `CpeState`; gateways Greenter; `CacheTokenStore`; `ArtifactStore` inmutable; `Greenter\*` importado sólo en `Support/Sunat`                                                                                                                                                                                                                    |
+| Tickets     | 98 pending · 0 completed · 99 failed; `queryTicket`/`queryCdr` no lanzan                                                                                                                                                                                                                                                                                                                  |
+| Config      | `config/sunat.php` endpoints, plazos, par beta `MODDATOS`/`MODDATOS`; ambiente `beta`/`production`; disco `fiscal`; `LimaDate`; cola database `after_commit`                                                                                                                                                                                                                              |
+| Diagnose    | `php artisan sunat:diagnose` (sin red)                                                                                                                                                                                                                                                                                                                                                    |
+| Catálogo    | `products` + `product_variants`: sku lower único por emisor, `unit_code` Cat. 03 (`NIU`/`ZZ`) y `tax_affectation` Cat. 07 (`10`/`20`/`30`) en la variante, precio `NUMERIC(12,2)` IGV incluido; CHECKs nombrados + trgm GIN; `SaveProduct` (transacción, guard inactivo ⇒ sólo reactivar, variante nunca se borra); `/products` Index+Form con `products.view/manage`; seed demo 10/20/30 |
 
-## No implementado (siguiente: V1)
+## No implementado (siguiente: V2)
 
-Productos, clientes, inventario, compras, caja ledger, ventas, tablas
+Clientes, inventario, compras, caja ledger, ventas, tablas
 `fiscal_*`, jobs de envío, PDF binario, GRE de producto, settings de emisor.
 
 Secretos SUNAT se leen de env. `issuers` no guarda PEM ni Clave SOL.

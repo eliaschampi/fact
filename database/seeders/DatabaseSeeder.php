@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
         $password = (string) config('necofact.seed_admin.password');
 
         if ($login === '' && $password === '') {
+            $this->call(ProductSeeder::class);
+
             return;
         }
 
@@ -113,5 +115,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]);
         });
+
+        $this->call(ProductSeeder::class);
     }
 }

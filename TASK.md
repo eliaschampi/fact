@@ -5,11 +5,11 @@ sin test no cuenta como hecho. Ley: `docs/SPEC.md`. Hechos: `docs/STATUS.md`.
 
 ## Estado
 
-| Campo                | Valor           |
-| -------------------- | --------------- |
-| Fase                 | V0 cerrado      |
-| Siguiente sesión     | **V1 Catálogo** |
-| Última actualización | 2026-08-23      |
+| Campo                | Valor          |
+| -------------------- | -------------- |
+| Fase                 | V1 cerrado     |
+| Siguiente sesión     | **V2 Cliente** |
+| Última actualización | 2026-08-23     |
 
 ---
 
@@ -20,24 +20,21 @@ Checks verdes. Detalle en `docs/STATUS.md`.
 
 ---
 
-## V1 — Catálogo (siguiente)
+## V1 — Catálogo (cerrado)
 
 **Frase:** hay productos vendibles con precio y afectación, por sede.
 
-Leer `docs/SPEC.md` §2 (layout) y §4 catálogo/inventario. Evidencia:
-Faztore `product_variants` (sku, precio, no stock en el producto).
-
-- [ ] Migración `products` + `product_variants`: `unit_code` Cat. 03 default
+- [x] Migración `products` + `product_variants`: `unit_code` Cat. 03 default
       `NIU`; `tax_affectation` Cat. 07 default `'10'`; precios `decimal(12,2)`;
       sku único lower; `issuer_code`.
-- [ ] Actions + FormRequests + `/products` (Index/Form) con
+- [x] Actions + FormRequests + `/products` (Index/Form) con
       `products.view` / `products.manage`.
-- [ ] Seed demo: 3 productos, afectaciones 10 / 20 / 30.
-- [ ] Feature test: crear/editar/inactivar; inactivo no se opera en el Action.
+- [x] Seed demo: 3 productos, afectaciones 10 / 20 / 30.
+- [x] Feature test: crear/editar/inactivar; inactivo no se opera en el Action.
 
-**Hecho cuando:** el usuario entra a `/products`, registra una variante
-gravada, la ve en el listado, y un test impide operar la inactiva.
-`composer run check` y `pnpm run build` verdes. `docs/STATUS.md` actualizado.
+`SaveProduct` guarda el agregado en una transacción; inactivo ⇒ sólo
+reactivación (SPEC §4 Catálogo). Checks verdes 2026-08-23: 49 tests /
+163 assertions, build verde.
 
 ---
 

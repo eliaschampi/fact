@@ -18,6 +18,12 @@ export const APP_NAVIGATION: readonly NavigationItem[] = [
         permission: 'dashboard.view',
     },
     {
+        label: 'Productos',
+        href: '/products',
+        icon: 'package',
+        permission: 'products.view',
+    },
+    {
         label: 'Sedes',
         href: '/branches',
         icon: 'building2',

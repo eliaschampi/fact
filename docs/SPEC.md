@@ -303,6 +303,24 @@ evidencia fiscal.
 
 SQL tomado de Faztore/Coedula y adaptado a NecoFact. No pegar Kysely.
 
+### Catálogo
+
+`products` es la identidad comercial (`name`, `description`, `is_active`).
+`product_variants` es lo vendible y el portador de los defaults fiscales
+de línea: `sku` único lower por emisor, `unit_code` Cat. 03 v1
+(`NIU`/`ZZ`), `tax_affectation` Cat. 07 v1 (`10`/`20`/`30`),
+`price NUMERIC(12,2)` **IGV incluido**. La venta (V5) snapshotea precio,
+unidad y afectación en la línea: editar el catálogo jamás reescribe una
+venta.
+
+- Producto inactivo no se opera: `SaveProduct` sobre un inactivo sólo
+  acepta guardado que lo reactiva; `RecordSale` reutiliza el mismo guard.
+- La variante no se borra (`sale_items` la referenciará): corrección =
+  edición. Nunca DELETE.
+- Sin tablas de catálogo SUNAT: los valores v1 los poseen los CHECK.
+  `cost_price` e inventario llegan con V3.
+- Búsqueda por trigram GIN sobre `products.name` y `product_variants.sku`.
+
 ### Inventario (Faztore)
 
 Sparse `(variant_code, branch_code)`. `on_hand` entero. CHECK `>= 0`.

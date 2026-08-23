@@ -20,4 +20,19 @@ class MoneyTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         Money::toCents('12.345');
     }
+
+    public function test_normalize_bring_decimals_to_scale_two(): void
+    {
+        $this->assertSame('18.50', Money::normalize('18.5'));
+        $this->assertSame('18.51', Money::normalize('18.505'));
+        $this->assertSame('3.46', Money::normalize('3.456'));
+        $this->assertSame('-0.01', Money::normalize('-0.005'));
+        $this->assertSame('0.00', Money::normalize('0'));
+    }
+
+    public function test_normalize_rejects_invalid_amounts(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Money::normalize('abc');
+    }
 }
