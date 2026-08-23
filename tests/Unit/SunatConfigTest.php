@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Support\LimaDate;
 use App\Support\Sunat\ArtifactStore;
+use App\Support\Sunat\CacheTokenStore;
 use App\Support\Sunat\CpeGateway;
 use App\Support\Sunat\GreenterCpeGateway;
 use App\Support\Sunat\SunatEndpoints;
@@ -43,7 +44,7 @@ class SunatConfigTest extends TestCase
     {
         $this->assertTrue(class_exists(See::class));
         $this->assertInstanceOf(GreenterCpeGateway::class, app(CpeGateway::class));
-        $this->assertInstanceOf(TokenStoreInterface::class, app(TokenStoreInterface::class));
+        $this->assertInstanceOf(TokenStoreInterface::class, app(CacheTokenStore::class));
     }
 
     public function test_artifact_paths_follow_issuer_year_month_document(): void

@@ -137,6 +137,8 @@ Cierre sólo de docs: Prettier del markdown y `git diff --check`. No
 declarar completo con un check relevante en rojo.
 
 CI no llama a SUNAT. Nunca regenerar XML firmado en un retry.
+Laboratorio y credenciales: `docs/SPEC.md` §3. Beta no es homologación ni
+producción. Un RUC NRUS no es el emisor de prueba del SEE.
 
 ## 6. Cierre documental
 

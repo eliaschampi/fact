@@ -9,7 +9,7 @@ use App\Support\Sunat\CpeGateway;
 use App\Support\Sunat\GreenterCpeGateway;
 use App\Support\Sunat\GreenterGreGateway;
 use App\Support\Sunat\GreGateway;
-use Greenter\Services\Api\TokenStoreInterface;
+use App\Support\Sunat\SunatEndpoints;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,9 +17,13 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(TokenStoreInterface::class, CacheTokenStore::class);
         $this->app->singleton(CpeGateway::class, GreenterCpeGateway::class);
-        $this->app->singleton(GreGateway::class, GreenterGreGateway::class);
+        // Greenter surface stays inside Support/Sunat: the provider wires
+        // concretes only, so no Greenter import is needed here.
+        $this->app->singleton(GreGateway::class, fn (): GreenterGreGateway => new GreenterGreGateway(
+            app(SunatEndpoints::class),
+            app(CacheTokenStore::class),
+        ));
     }
 
     public function boot(): void

@@ -26,6 +26,7 @@ factura”, SaaS multi-RUC, microservicio, SIRE/RVIE, percepción/retención/
 detracción, ND `08` con UI, GRE transportista, sesiones de caja abrir/cerrar.
 
 Despliegue v1: **1 RUC · 1 deployment · N sedes.** Schema con `issuer_code`.
+Repo privado. El software no se registra ante SUNAT.
 
 ### Tesis
 
@@ -47,12 +48,12 @@ confirmar. El correlativo se reserva una vez. Un timeout no es un rechazo.
 Prioridad, no invertir: **correctness → readability → consistency →
 performance → simplicity.**
 
-| Origen   | Copiar                                                                  | Descartar                                                            |
-| -------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Aeduca   | Laravel 13, Actions, FormRequests, Inertia, Svelte 5, Lumi, AuthAccount | pagos académicos, `VoidPayment` = efecto SUNAT                       |
-| Faztore  | stock sparse, deltas, compra `in_transit`, caja user-scoped, locks      | cliente sin doc, un medio de pago, void = baja, `Number()`, `UUID[]` |
-| Coedula  | service sólo si orquesta, caja = efectivo, `request_key`, binario PDF   | runtime Node                                                         |
-| Greenter | UBL + firma + SOAP/REST                                                 | `$see->send($doc)` en retry, `report`, `htmltopdf`                   |
+| Origen   | Copiar                                                                             | Descartar                                                            |
+| -------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Aeduca   | Laravel 13, Actions, FormRequests, Inertia, Svelte 5, Lumi, AuthAccount            | pagos académicos, `VoidPayment` = efecto SUNAT                       |
+| Faztore  | stock sparse, deltas, compra `in_transit`, caja user-scoped, locks                 | cliente sin doc, un medio de pago, void = baja, `Number()`, `UUID[]` |
+| Coedula  | service sólo si orquesta, caja = efectivo, `request_key`, spawn aislado (`omr-rs`) | runtime Node                                                         |
+| Greenter | UBL + firma + SOAP/REST                                                            | `$see->send($doc)` en retry, `report`, `htmltopdf`                   |
 
 Evidencia local para copiar invariantes (no pegar Kysely):
 
@@ -63,6 +64,10 @@ Evidencia local para copiar invariantes (no pegar Kysely):
 - caja = efectivo hoy: `coedula/docs/PRODUCT.md` R-01
 - idempotencia: `coedula/.../cashbox-repository.internal.ts`
   (`resolveCashboxRequestReplay`)
+- spawn aislado: `coedula/src/lib/server/services/omr-engine.service.ts`
+  (tmpdir, timeout, tope de concurrencia). El binario externo de Coedula
+  es el OMR; sus PDF son pdf-lib in-process. NecoFact aplica el patrón de
+  aislamiento a su binario de PDF fiscal.
 - idiom Laravel: `aeduca/app/Actions`, `aeduca/AGENTS.md`
 
 ---
@@ -129,6 +134,20 @@ El mapper FiscalDocument → modelo Greenter vive en `Support/Sunat`.
 
 ## 3. Contrato SUNAT
 
+NecoFact es el [SEE del contribuyente](https://cpe.sunat.gob.pe/sistema_emision/see_contribuyente):
+el emisor genera UBL, firma y envía desde este sistema. No es SEE-SOL, no
+es Facturador SUNAT, no es OSE, no es PSE.
+
+SUNAT autentica al **contribuyente emisor** (RUC + Clave SOL + certificado;
+GRE añade `client_id`/`client_secret` emitidos en SOL). No autentica al
+programador ni al repositorio. No hay cuenta “developer NecoFact”.
+
+Producción (emisor, no el código): Clave SOL; calidad de emisor electrónico
+por designación o elección en SOL; domicilio habido; RUC activo; afecto a
+renta de **tercera categoría** si genera esa renta. Conservar XML, notas,
+RC/RA y CDR; poner el CPE a disposición del adquirente un año
+(`/c/{token}`).
+
 Paquete: **`greenter/lite` 5.3.0**. Packagist `thegreenter/greenter` no existe.
 Camino:
 
@@ -138,6 +157,52 @@ mapper → See::getXmlSigned → persistir XML+sha256 → See::sendXmlFile
 
 `$see->send($model)` regenera XML: prohibido en retry y en producción.
 SOAP de GRE está deprecado: GRE va por `Greenter\Api` REST.
+
+### Laboratorio de desarrollo
+
+CI y `composer run check` **nunca** llaman a SUNAT.
+
+| Capa                     | Cubre                                                             | No cubre                        |
+| ------------------------ | ----------------------------------------------------------------- | ------------------------------- |
+| Tests + `FakeCpeGateway` | dominio, TaxMath, CpeState, tickets 98/0/99, XML inmutable        | red                             |
+| Beta SOAP                | estructuras XML de `01` `03` `07` `08`; certificado no registrado | GRE; validez tributaria; stress |
+| Producción               | CPE + GRE con efecto tributario                                   | el día a día de desarrollo      |
+
+Beta oficial
+([pautas](https://orientacion.sunat.gob.pe/12-pautas-servicio-beta)):
+usuario `{RUC}MODDATOS`, password `MODDATOS`. El RUC del XML de prueba
+puede ser el del desarrollador: es identidad de laboratorio, no emisión
+real. `config/sunat.beta` guarda el par. Homologación es **otro** host
+(`ol-ti-itcpgem-sqa`); no mezclar.
+
+Un RUC **NRUS** no es el laboratorio de este producto:
+
+- boleta NRUS = SEE-SOL portal
+  ([gob.pe/7010](https://www.gob.pe/7010-comprobantes-que-emites-en-el-nrus-emitir-boleta-de-venta-electronica-en-el-nuevo-rus)),
+  no Greenter;
+- NRUS no emite factura
+  ([gob.pe/1153](https://www.gob.pe/1153-superintendencia-nacional-de-aduanas-y-de-administracion-tributaria-comprobantes-que-emites-en-el-nrus));
+- CDT y GRE documentados piden tercera categoría
+  ([CDT](https://www.gob.pe/26402-certificado-digital-tributario-cdt),
+  [GRE](https://www.gob.pe/26296-guia-de-remision-electronica-gre));
+- RUC que empieza en `10` no es NRUS; RUC `20` no es requisito de
+  factura. Emitir `01` = `issuers.tax_regime` ≠ `NRUS` y
+  `capabilities.invoice`.
+
+Primera red de CPE: **beta**. GRE y validez tributaria: emisor de tercera
+categoría en V12. No rediseñar `.env` a multi-emisor en v1.
+
+### Credenciales (env, no `issuers`)
+
+`issuers.environment` y `SUNAT_ENVIRONMENT`: `beta` \| `production`.
+PEM, Clave SOL y OAuth GRE viven en env. Un cert y un SOL por deployment.
+El software no tiene certificado propio.
+
+| Variable                                | Dueño                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------- |
+| `SUNAT_CERTIFICATE_PATH`                | PEM del emisor sin contraseña; el p12 se convierte fuera de línea. Firma el XML. |
+| `SUNAT_SOL_RUC` / `_USER` / `_PASSWORD` | Clave SOL del emisor                                                             |
+| `SUNAT_GRE_CLIENT_ID` / `_SECRET`       | aplicación registrada en SOL por ese RUC, no Greenter                            |
 
 ### Endpoints (`config/sunat.php`, nunca Actions)
 
@@ -151,10 +216,7 @@ SOAP de GRE está deprecado: GRE va por `Greenter\Api` REST.
 | GRE cpe       | `https://api-cpe.sunat.gob.pe/v1`                                      |
 
 `ol-ti-itemision-otroscpe-gem` es **otros CPE** (retención/percepción), no
-factura. Beta: `MODDATOS` / `moddatos`. No stress test. No datos reales.
-
-`issuers.environment` y `SUNAT_ENVIRONMENT`: `beta` \| `production`.
-Secretos (PEM, Clave SOL, OAuth GRE) en env, no en `issuers`.
+factura.
 
 ### Catálogos v1
 
@@ -279,6 +341,7 @@ rompe un facturador.
 **Modelo**
 
 - Un cajero = una posición continua. No hay entidad caja, ni abrir/cerrar, ni saldo mutable.
+- El ledger es **tabla física** con FK y CHECK de alineación, no vista derivada. Coedula y Aeduca proyectan hechos con `UNION ALL`; aquí el movimiento es fact propio con PK, dueño y corrección. La lectura diaria sí es vista SQL.
 - `cashbox_movements` es el libro. Saldo = `SUM` de `active` con `business_date <= hoy Lima`.
 - Tipos: `sale` · `purchase` · `manual_income` · `expense` · `outflow_return` · `transfer`.
 - Dirección `in`/`out`. Status `active`/`reversed`. Nunca DELETE.
@@ -287,7 +350,8 @@ rompe un facturador.
 - FKs explícitas en el movimiento, no polimorfismo: `sale_code`, `purchase_code`, `outflow_code`, `transfer_code` nullable + CHECK de “exactamente el dueño que el tipo exige”. `manual_income` no referencia cabecera.
 - `branch_code` en el movimiento es origen inmutable (la venta/compra ya tienen sede). La caja no se filtra por sede.
 
-**Efectivo vs otros medios** — la regla que Faztore rompe y NecoFact no:
+**Efectivo vs otros medios** — la regla que Faztore no expresa (un solo
+medio por venta) y NecoFact sí necesita:
 
 | Medio                           | `sale_payments` | `cashbox_movements`      |
 | ------------------------------- | --------------- | ------------------------ |
@@ -360,8 +424,9 @@ Con CPE aceptado: NC `07` (otorgada) o baja RC/RA (no otorgada). NC
 accepted **antes** de restaurar stock/caja.
 
 Factura `01` exige receptor `doc_type='6'` RUC 11. Boleta ≥ 700 PEN exige
-identidad real. Capacidad de emitir `01` = `issuers.capabilities`, no el
-prefijo del RUC del cliente. Consumidor final: una fila por emisor,
+identidad real. Capacidad de emitir `01` = régimen del **emisor** distinto
+de `NRUS` y `issuers.capabilities.invoice`, no el prefijo `10`/`20` del
+RUC del cliente ni del emisor. Consumidor final: una fila por emisor,
 `0` / `00000000`, no borrable.
 
 `UNIQUE (sale_code, variant_code)`.
@@ -401,7 +466,7 @@ documentada en `TASK.md`.
 | 9   | cola `/cpe`, reconcile, techo → `manual_review`                |
 | 10  | GRE remitente                                                  |
 | 11  | transferencia de stock; inmutable con GRE                      |
-| 12  | settings emisor, PEM, piloto real                              |
+| 12  | settings emisor, PEM, piloto con emisor de tercera categoría   |
 
 Un vertical está hecho cuando su usuario entra, opera, ve el resultado
 persistido, y autorización/fallos son correctos — no cuando hay CRUD.

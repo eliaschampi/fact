@@ -7,10 +7,13 @@ return [
     | Environment
     |--------------------------------------------------------------------------
     |
-    | beta        — SUNAT structural tests only. Never real taxpayer data.
-    | production  — live SEE del Contribuyente.
+    | beta        — SUNAT structural XML tests (01/03/07/08). Never real
+    |               taxpayer effect. Auth: {RUC}MODDATOS / MODDATOS.
+    |               Certificate need not be registered. Does not cover GRE.
+    | production  — live SEE del Contribuyente for one issuer.
     |
     | Homologación is a different SOAP host from beta. Do not mix them.
+    | SUNAT authenticates the issuer, not this repository.
     |
     */
 
@@ -87,9 +90,9 @@ return [
 
     'currency' => 'PEN',
 
+    // PEM passwordless: Greenter's signer takes no password; a p12 is
+    // converted to PEM offline. Nothing consumes a certificate password.
     'certificate_path' => env('SUNAT_CERTIFICATE_PATH'),
-
-    'certificate_password' => env('SUNAT_CERTIFICATE_PASSWORD'),
 
     'sol' => [
         'ruc' => env('SUNAT_SOL_RUC'),
@@ -102,10 +105,12 @@ return [
         'client_secret' => env('SUNAT_GRE_CLIENT_SECRET'),
     ],
 
+    // Official beta pair (orientacion.sunat.gob.pe/12-pautas-servicio-beta).
+    // Username sent to SOAP is {ruc}{user}. Not production Clave SOL.
     'beta' => [
         'ruc' => '20000000001',
         'user' => 'MODDATOS',
-        'password' => 'moddatos',
+        'password' => 'MODDATOS',
     ],
 
 ];

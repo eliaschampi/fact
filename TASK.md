@@ -55,7 +55,9 @@ gravada, la ve en el listado, y un test impide operar la inactiva.
 | 9   | Nada queda en limbo; unknown se consulta, error reintenta el XML |
 | 10  | T001 pide traslado; el stock lo movió Sale o Transfer            |
 | 11  | Moví stock entre sedes una vez                                   |
-| 12  | Un cliente real factura todos los días                           |
+| 12  | Un emisor de tercera categoría factura todos los días            |
 
-Mecánica SQL y reglas: `docs/SPEC.md` §3–§4 (caja: fusión Faztore ledger +
-Coedula R-01 + Aeduca supervise/vuelto). No competir esta spec.
+Mecánica SQL y reglas: `docs/SPEC.md` §3–§4 (SEE contribuyente + laboratorio
+beta; caja: fusión Faztore ledger + Coedula R-01 + Aeduca supervise/vuelto).
+No competir esta spec. Red a SUNAT = V12 con emisor de tercera categoría,
+no el RUC NRUS del desarrollador.
