@@ -20,9 +20,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'province',
     'district',
     'capabilities',
-    'certificate_path',
-    'sol_user_ref',
-    'gre_client_id_ref',
     'environment',
 ])]
 class Issuer extends Model
@@ -37,7 +34,7 @@ class Issuer extends Model
 
     public const string ENVIRONMENT_BETA = 'beta';
 
-    public const string ENVIRONMENT_PROD = 'prod';
+    public const string ENVIRONMENT_PRODUCTION = 'production';
 
     /** @use HasFactory<IssuerFactory> */
     use HasFactory, HasUuids;

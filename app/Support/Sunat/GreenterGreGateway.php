@@ -4,6 +4,8 @@ namespace App\Support\Sunat;
 
 use Greenter\Api;
 use Greenter\Api\ApiFactory;
+use Greenter\Model\Response\BillResult;
+use Greenter\Model\Response\SummaryResult;
 use Greenter\Services\Api\TokenStoreInterface;
 use Greenter\Sunat\GRE\Api\AuthApi;
 use Greenter\Sunat\GRE\Configuration;
@@ -25,40 +27,29 @@ final class GreenterGreGateway implements GreGateway
         try {
             $result = $this->api()->sendXml($xml->filename, $xml->contents);
         } catch (Throwable $exception) {
-            return new SubmissionResult(
-                transportOk: false,
-                ticket: null,
-                cdrZip: null,
-                cdrCode: null,
-                cdrDescription: null,
-                notes: [],
-                faultCode: $exception->getCode() !== 0 ? (string) $exception->getCode() : null,
-                faultMessage: $exception->getMessage(),
-                endpoint: $endpoint,
+            return SubmissionResult::transportError($endpoint, $exception);
+        }
+
+        $ticket = $result instanceof SummaryResult ? $result->getTicket() : null;
+
+        if (! $result?->isSuccess()) {
+            return SubmissionResult::fault(
+                $endpoint,
+                $result?->getError()?->getCode(),
+                $result?->getError()?->getMessage() ?? 'Respuesta GRE vacía.',
+                $ticket,
             );
         }
 
-        if (! $result?->isSuccess()) {
-            return new SubmissionResult(
-                transportOk: false,
-                ticket: method_exists($result, 'getTicket') ? $result->getTicket() : null,
-                cdrZip: null,
-                cdrCode: null,
-                cdrDescription: null,
-                notes: [],
-                faultCode: $result?->getError()?->getCode(),
-                faultMessage: $result?->getError()?->getMessage() ?? 'Respuesta GRE vacía.',
-                endpoint: $endpoint,
-            );
-        }
+        $cdr = $result instanceof BillResult ? $result->getCdrResponse() : null;
 
         return new SubmissionResult(
             transportOk: true,
-            ticket: method_exists($result, 'getTicket') ? $result->getTicket() : null,
-            cdrZip: method_exists($result, 'getCdrZip') ? $result->getCdrZip() : null,
-            cdrCode: null,
-            cdrDescription: null,
-            notes: [],
+            ticket: $ticket,
+            cdrZip: $result instanceof BillResult ? $result->getCdrZip() : null,
+            cdrCode: $cdr?->getCode(),
+            cdrDescription: $cdr?->getDescription(),
+            notes: $cdr?->getNotes() ?? [],
             faultCode: null,
             faultMessage: null,
             endpoint: $endpoint,
@@ -67,24 +58,21 @@ final class GreenterGreGateway implements GreGateway
 
     public function queryTicket(string $ticket): TicketResult
     {
-        $result = $this->api()->getStatus($ticket);
-        $code = (int) $result->getCode();
-        $status = match (true) {
-            $code === 98 => TicketResult::PENDING,
-            $code === 0, $code === 99 => TicketResult::COMPLETED,
-            default => TicketResult::ERROR,
-        };
+        try {
+            $result = $this->api()->getStatus($ticket);
+        } catch (Throwable $exception) {
+            return TicketResult::transportError($exception->getMessage());
+        }
 
         $cdr = $result->getCdrResponse();
 
-        return new TicketResult(
-            status: $status,
-            sunatCode: (string) $code,
-            cdrZip: $result->getCdrZip(),
-            cdrCode: $cdr?->getCode(),
-            cdrDescription: $cdr?->getDescription(),
-            notes: $cdr?->getNotes() ?? [],
-            faultMessage: $result->isSuccess() ? null : $result->getError()?->getMessage(),
+        return TicketResult::fromSunatTicket(
+            $result->getCode() ?? $result->getError()?->getCode(),
+            $result->getCdrZip(),
+            $cdr?->getCode(),
+            $cdr?->getDescription(),
+            $cdr?->getNotes() ?? [],
+            $result->isSuccess() ? null : $result->getError()?->getMessage(),
         );
     }
 

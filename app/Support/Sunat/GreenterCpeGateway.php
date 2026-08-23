@@ -3,10 +3,7 @@
 namespace App\Support\Sunat;
 
 use Greenter\Model\Response\BillResult;
-use Greenter\Model\Response\StatusResult;
-use Greenter\See;
-use Greenter\Ws\Services\ConsultCdrService;
-use Greenter\Ws\Services\SoapClient;
+use Greenter\Model\Response\SummaryResult;
 use Greenter\XMLSecLibs\Sunat\SignedXml as GreenterSigner;
 use RuntimeException;
 use Throwable;
@@ -40,53 +37,45 @@ final class GreenterCpeGateway implements CpeGateway
         try {
             $result = $this->seeFactory->makeReadyToSend()->sendXmlFile($xml->contents);
         } catch (Throwable $exception) {
+            return SubmissionResult::transportError($endpoint, $exception);
+        }
+
+        if ($result instanceof SummaryResult) {
+            if (! $result->isSuccess()) {
+                return SubmissionResult::fault($endpoint, $result->getError()?->getCode(), $result->getError()?->getMessage(), $result->getTicket());
+            }
+
             return new SubmissionResult(
-                transportOk: false,
-                ticket: null,
+                transportOk: true,
+                ticket: $result->getTicket(),
                 cdrZip: null,
                 cdrCode: null,
                 cdrDescription: null,
                 notes: [],
-                faultCode: $exception->getCode() !== 0 ? (string) $exception->getCode() : null,
-                faultMessage: $exception->getMessage(),
+                faultCode: null,
+                faultMessage: null,
                 endpoint: $endpoint,
             );
         }
 
-        if (! $result instanceof BillResult && ! $result instanceof StatusResult) {
-            return new SubmissionResult(
-                transportOk: false,
-                ticket: method_exists($result, 'getTicket') ? $result->getTicket() : null,
-                cdrZip: null,
-                cdrCode: null,
-                cdrDescription: null,
-                notes: [],
-                faultCode: $result?->getError()?->getCode(),
-                faultMessage: $result?->getError()?->getMessage() ?? 'Respuesta SUNAT vacía.',
-                endpoint: $endpoint,
+        if (! $result instanceof BillResult) {
+            return SubmissionResult::fault(
+                $endpoint,
+                $result?->getError()?->getCode(),
+                $result?->getError()?->getMessage() ?? 'Respuesta SUNAT vacía.',
             );
         }
 
         if (! $result->isSuccess()) {
-            return new SubmissionResult(
-                transportOk: false,
-                ticket: method_exists($result, 'getTicket') ? $result->getTicket() : null,
-                cdrZip: null,
-                cdrCode: null,
-                cdrDescription: null,
-                notes: [],
-                faultCode: $result->getError()?->getCode(),
-                faultMessage: $result->getError()?->getMessage(),
-                endpoint: $endpoint,
-            );
+            return SubmissionResult::fault($endpoint, $result->getError()?->getCode(), $result->getError()?->getMessage());
         }
 
-        $cdr = method_exists($result, 'getCdrResponse') ? $result->getCdrResponse() : null;
+        $cdr = $result->getCdrResponse();
 
         return new SubmissionResult(
             transportOk: true,
-            ticket: method_exists($result, 'getTicket') ? $result->getTicket() : null,
-            cdrZip: method_exists($result, 'getCdrZip') ? $result->getCdrZip() : null,
+            ticket: null,
+            cdrZip: $result->getCdrZip(),
             cdrCode: $cdr?->getCode(),
             cdrDescription: $cdr?->getDescription(),
             notes: $cdr?->getNotes() ?? [],
@@ -98,62 +87,36 @@ final class GreenterCpeGateway implements CpeGateway
 
     public function queryTicket(string $ticket): TicketResult
     {
-        $result = $this->seeFactory->makeReadyToSend()->getStatus($ticket);
-
-        if (! $result->isSuccess()) {
-            return new TicketResult(
-                status: TicketResult::ERROR,
-                sunatCode: $result->getError()?->getCode(),
-                cdrZip: null,
-                cdrCode: null,
-                cdrDescription: null,
-                notes: [],
-                faultMessage: $result->getError()?->getMessage(),
-            );
+        try {
+            $result = $this->seeFactory->makeReadyToSend()->getStatus($ticket);
+        } catch (Throwable $exception) {
+            return TicketResult::transportError($exception->getMessage());
         }
-
-        $code = (int) $result->getCode();
-        $status = match (true) {
-            $code === 98 => TicketResult::PENDING,
-            $code === 0, $code === 99 => TicketResult::COMPLETED,
-            default => TicketResult::ERROR,
-        };
 
         $cdr = $result->getCdrResponse();
 
-        return new TicketResult(
-            status: $status,
-            sunatCode: (string) $code,
-            cdrZip: $result->getCdrZip(),
-            cdrCode: $cdr?->getCode(),
-            cdrDescription: $cdr?->getDescription(),
-            notes: $cdr?->getNotes() ?? [],
-            faultMessage: null,
+        return TicketResult::fromSunatTicket(
+            $result->getCode() ?? $result->getError()?->getCode(),
+            $result->getCdrZip(),
+            $cdr?->getCode(),
+            $cdr?->getDescription(),
+            $cdr?->getNotes() ?? [],
+            $result->isSuccess() ? null : $result->getError()?->getMessage(),
         );
     }
 
     public function queryCdr(string $ruc, string $tipo, string $serie, int $numero): CdrQueryResult
     {
-        $credentials = SunatCredentials::fromConfig();
-        $client = new SoapClient;
-        $client->setService($this->endpoints->cdrConsult());
-
-        if ($credentials->hasSol()) {
-            $client->setCredentials($credentials->ruc.$credentials->solUser, $credentials->solPassword);
+        try {
+            $service = $this->seeFactory->makeCdrConsultService();
+            $result = $service->getStatusCdr($ruc, $tipo, $serie, $numero);
+        } catch (Throwable $exception) {
+            return CdrQueryResult::transportError($exception->getMessage());
         }
 
-        $service = new ConsultCdrService;
-        $service->setClient($client);
-        $result = $service->getStatusCdr($ruc, $tipo, $serie, $numero);
-
         if (! $result->isSuccess()) {
-            return new CdrQueryResult(
-                found: false,
-                cdrZip: null,
-                cdrCode: null,
-                cdrDescription: null,
-                notes: [],
-                faultMessage: $result->getError()?->getMessage() ?? $result->getMessage(),
+            return CdrQueryResult::transportError(
+                $result->getError()?->getMessage() ?? $result->getMessage(),
             );
         }
 
@@ -167,10 +130,5 @@ final class GreenterCpeGateway implements CpeGateway
             notes: $cdr?->getNotes() ?? [],
             faultMessage: null,
         );
-    }
-
-    public function see(): See
-    {
-        return $this->seeFactory->make();
     }
 }

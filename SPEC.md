@@ -86,7 +86,9 @@ interno `necofact/sunat` en v1.
   `NUMERIC(16,6)` unitario, `NUMERIC(12,2)` bases/IGV/total. Nunca `float` como fuente.
 - `TaxMath` es el único dueño del IGV. Afectaciones v1: `10` `20` `30`.
   Redondeo half-up a 2 en la línea, luego suma.
-- Timezone de negocio: `America/Lima`. El cliente no envía fechas de negocio.
+- Timezone de negocio: `LimaDate::TIMEZONE` (`America/Lima`). Es la única
+  constante; `config/app.php` y el storage fiscal la reutilizan. El cliente
+  no envía fechas de negocio.
 - Permisos `dominio.view` / `dominio.manage` vía `Gate::before` + `PermissionResolver`.
   `can()` del frontend es UX-only.
 - Svelte 5 runes. Sólo tokens `--lumi-*`. Sin tabs/rutas vacías.
@@ -160,6 +162,23 @@ accepted → corrected (NC 07 accepted)
 
 `accepted ↛ reserved|signed`. `manual_review` es flag ortogonal.
 
+Ticket de RC/RA (SOAP `getStatus`) y GRE REST (`codRespuesta`) usan los
+mismos códigos de **proceso**, no de aceptación del comprobante:
+
+| Código | TicketResult | Significado                                                        |
+| ------ | ------------ | ------------------------------------------------------------------ |
+| 98     | `pending`    | Sigue en proceso. Reencolar.                                       |
+| 0      | `completed`  | Proceso terminó. Leer el CDR.                                      |
+| 99     | `failed`     | Proceso terminó con error. No aceptar. El CDR puede existir igual. |
+
+`99` **no** es aceptación. Greenter `ExtService::isProcessed` y
+`GreSender::processResponse` tratan 0 y 99 como “ya no está en 98”; el
+resultado de negocio sigue en el CDR / nodo error.
+
+El mapper FiscalDocument → modelo Greenter vive en `Support/Sunat`. Las
+Actions nunca importan `Greenter\*`. El gateway firma XML ya construido
+(`signXml`); no expone `See`.
+
 ### Series
 
 `F001` / `B001` / `T001` por sede. RC/RA `{ruc}-RC/RA-{Ymd}-{n}`.
@@ -168,8 +187,12 @@ accepted → corrected (NC 07 accepted)
 ### GRE
 
 REST, OAuth propio, `TokenStoreInterface` persistente (Greenter trae
-`InMemoryStore`, insuficiente). `codRespuesta` 98 pending, 0/99 completed.
-GRE no mueve stock ni caja.
+`InMemoryStore`, insuficiente). `codRespuesta` 98 pending, 0 completed, 99
+failed (`envío con error`). GRE no mueve stock ni caja.
+
+Secretos (PEM, Clave SOL, GRE OAuth) viven en env/secret store, no en
+`issuers`. `issuers.environment` es `beta` o `production`, el mismo
+vocabulario que `SUNAT_ENVIRONMENT`. Punteros a secretos llegan en V12.
 
 ---
 

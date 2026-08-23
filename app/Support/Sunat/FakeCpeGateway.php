@@ -4,6 +4,12 @@ namespace App\Support\Sunat;
 
 final class FakeCpeGateway implements CpeGateway
 {
+    public function __construct(
+        private readonly ?SubmissionResult $send = null,
+        private readonly ?TicketResult $ticket = null,
+        private readonly ?CdrQueryResult $cdr = null,
+    ) {}
+
     public function signXml(string $xmlContents, string $filename): SignedXml
     {
         return SignedXml::fromContents($xmlContents, $filename);
@@ -11,7 +17,7 @@ final class FakeCpeGateway implements CpeGateway
 
     public function sendSigned(SignedXml $xml): SubmissionResult
     {
-        return new SubmissionResult(
+        return $this->send ?? new SubmissionResult(
             transportOk: true,
             ticket: null,
             cdrZip: 'fake-cdr',
@@ -26,20 +32,12 @@ final class FakeCpeGateway implements CpeGateway
 
     public function queryTicket(string $ticket): TicketResult
     {
-        return new TicketResult(
-            status: TicketResult::COMPLETED,
-            sunatCode: '0',
-            cdrZip: 'fake-cdr',
-            cdrCode: '0',
-            cdrDescription: 'Aceptado (fake)',
-            notes: [],
-            faultMessage: null,
-        );
+        return $this->ticket ?? TicketResult::fromSunatTicket('0', 'fake-cdr', '0', 'Aceptado (fake)');
     }
 
     public function queryCdr(string $ruc, string $tipo, string $serie, int $numero): CdrQueryResult
     {
-        return new CdrQueryResult(
+        return $this->cdr ?? new CdrQueryResult(
             found: true,
             cdrZip: 'fake-cdr',
             cdrCode: '0',

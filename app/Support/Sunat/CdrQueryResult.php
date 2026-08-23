@@ -13,4 +13,16 @@ final readonly class CdrQueryResult
         public array $notes,
         public ?string $faultMessage,
     ) {}
+
+    public static function transportError(?string $message): self
+    {
+        return new self(
+            found: false,
+            cdrZip: null,
+            cdrCode: null,
+            cdrDescription: null,
+            notes: [],
+            faultMessage: $message,
+        );
+    }
 }

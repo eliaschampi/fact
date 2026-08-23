@@ -6,11 +6,15 @@ use InvalidArgumentException;
 
 final class SunatEndpoints
 {
+    public const string BETA = 'beta';
+
+    public const string PRODUCTION = 'production';
+
     public function environment(): string
     {
-        $environment = (string) config('sunat.environment', 'beta');
+        $environment = (string) config('sunat.environment', self::BETA);
 
-        if (! in_array($environment, ['beta', 'production'], true)) {
+        if (! in_array($environment, [self::BETA, self::PRODUCTION], true)) {
             throw new InvalidArgumentException('SUNAT_ENVIRONMENT must be beta or production.');
         }
 
@@ -19,9 +23,7 @@ final class SunatEndpoints
 
     public function billService(): string
     {
-        $environment = $this->environment();
-
-        return $environment === 'production'
+        return $this->environment() === self::PRODUCTION
             ? (string) config('sunat.endpoints.fe.production')
             : (string) config('sunat.endpoints.fe.beta');
     }
@@ -29,11 +31,6 @@ final class SunatEndpoints
     public function cdrConsult(): string
     {
         return (string) config('sunat.endpoints.fe.consulta_cdr');
-    }
-
-    public function homologacion(): string
-    {
-        return (string) config('sunat.endpoints.fe.homologacion');
     }
 
     public function greAuth(): string

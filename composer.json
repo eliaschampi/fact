@@ -17,6 +17,7 @@
         "ext-openssl": "*",
         "ext-soap": "*",
         "ext-zlib": "*",
+        "brick/math": "^0.18.0",
         "greenter/gre-api": "^1.0",
         "greenter/lite": "^5.3",
         "inertiajs/inertia-laravel": "^3.1",

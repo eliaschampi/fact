@@ -9,15 +9,13 @@ no cubierto por test no cuenta como hecho.
 | -------------------- | ------------------------------------- |
 | Fase                 | **V0 Fundación** — codebase arrancado |
 | Siguiente sesión     | **V1 Catálogo**                       |
-| Última actualización | 2026-08-23                            |
+| Última actualización | 2026-08-23 (V0 hardening)             |
 
 Verificado en esta sesión: Laravel 13.26.1, PHP 8.5.8, Greenter lite **5.3.0**,
 Inertia 3.3.1, PostgreSQL 18.4, endpoints SUNAT oficiales (ver `SPEC.md` §4).
 
-Documentos de brainstorm descartados (conflicto o redundancia): `plan.md`,
-`foundation.md`, `product.md`, `requirements.md`, `sunat.md` (proponía
-`Domains/` y `draft`, rechazado), `deep-research-report*.md` (integrar SUNAT
-en Aeduca — premisa cerrada). Quedan `README.md`, `SPEC.md`, este archivo.
+Documentos de brainstorm archivados en `olddocs/necofact-founding/` (no son
+autoridad). Quedan `README.md`, `SPEC.md`, este archivo.
 
 ---
 
@@ -43,8 +41,13 @@ en Aeduca — premisa cerrada). Quedan `README.md`, `SPEC.md`, este archivo.
 **Hecho cuando:** `composer run check` y `pnpm run build` verdes; V0 merged.
 
 Núcleo fiscal ya presente (sin emisión): `Support/Sunat/*` (gateways, endpoints,
-TokenStore persistente, ArtifactStore), `TaxMath`, `CpeState`, `FakeCpeGateway`.
-No hay `RecordSale` ni XML de producción todavía — eso es V5.
+TokenStore persistente, ArtifactStore), `TaxMath`, `CpeState`, `FakeCpeGateway`
+configurable. No hay `RecordSale` ni XML de producción todavía — eso es V5.
+
+Hardening post-review (misma sesión V0): ticket `99` → `failed` (no accepted);
+`queryTicket`/`queryCdr` no lanzan; `brick/math` declarado; ambiente
+`beta`/`production` unificado; `LimaDate` dueño del timezone; secretos fuera
+de `issuers`; `see()` removido; mapper queda en `Support/Sunat` (V5).
 
 ---
 

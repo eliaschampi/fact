@@ -24,9 +24,6 @@ return new class extends Migration
             $table->string('province', 80)->nullable();
             $table->string('district', 80)->nullable();
             $table->jsonb('capabilities');
-            $table->string('certificate_path')->nullable();
-            $table->string('sol_user_ref', 40)->nullable();
-            $table->string('gre_client_id_ref', 80)->nullable();
             $table->string('environment', 16);
             $table->timestampsTz();
 
@@ -40,7 +37,7 @@ return new class extends Migration
             ADD CONSTRAINT issuers_tax_regime_check
             CHECK (tax_regime IN ('NRUS', 'RER', 'RMT', 'GENERAL')),
             ADD CONSTRAINT issuers_environment_check
-            CHECK (environment IN ('beta', 'prod')),
+            CHECK (environment IN ('beta', 'production')),
             ADD CONSTRAINT issuers_legal_name_not_blank_check
             CHECK (btrim(legal_name) <> '')
             SQL);

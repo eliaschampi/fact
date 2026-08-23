@@ -15,8 +15,6 @@ return [
         'password' => env('NECOFACT_SEED_ADMIN_PASSWORD'),
     ],
 
-    'business_timezone' => 'America/Lima',
-
     'pdf' => [
         'binary_path' => env('PDF_BINARY_PATH'),
         'timeout_ms' => (int) env('PDF_TIMEOUT_MS', 15_000),

@@ -19,7 +19,8 @@ una factura.
 | `TASK.md`   | Vertical en curso y ledger de ejecución |
 
 El código manda sobre cualquier documento. Ningún archivo declara implementado
-lo que el código no contiene.
+lo que el código no contiene. `olddocs/` es archivo de brainstorm, no
+autoridad.
 
 ## Stack
 

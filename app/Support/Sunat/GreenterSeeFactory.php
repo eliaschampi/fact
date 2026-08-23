@@ -3,6 +3,8 @@
 namespace App\Support\Sunat;
 
 use Greenter\See;
+use Greenter\Ws\Services\ConsultCdrService;
+use Greenter\Ws\Services\SoapClient;
 use RuntimeException;
 
 final class GreenterSeeFactory
@@ -37,5 +39,21 @@ final class GreenterSeeFactory
         }
 
         return $this->make($credentials);
+    }
+
+    public function makeCdrConsultService(?SunatCredentials $credentials = null): ConsultCdrService
+    {
+        $credentials ??= SunatCredentials::fromConfig();
+        $client = new SoapClient;
+        $client->setService($this->endpoints->cdrConsult());
+
+        if ($credentials->hasSol()) {
+            $client->setCredentials($credentials->ruc.$credentials->solUser, $credentials->solPassword);
+        }
+
+        $service = new ConsultCdrService;
+        $service->setClient($client);
+
+        return $service;
     }
 }

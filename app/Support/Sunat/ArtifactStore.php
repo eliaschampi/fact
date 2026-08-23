@@ -2,9 +2,11 @@
 
 namespace App\Support\Sunat;
 
+use App\Support\LimaDate;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 final class ArtifactStore
 {
@@ -28,11 +30,13 @@ final class ArtifactStore
         string $series,
         int $number,
     ): string {
+        $lima = $issuedAt->timezone(LimaDate::TIMEZONE);
+
         return sprintf(
             '%s/%s/%s/%s-%s-%d',
             $issuerKey,
-            $issuedAt->timezone('America/Lima')->format('Y'),
-            $issuedAt->timezone('America/Lima')->format('m'),
+            $lima->format('Y'),
+            $lima->format('m'),
             $documentType,
             $series,
             $number,
@@ -50,8 +54,12 @@ final class ArtifactStore
         return $this->directory($issuerKey, $issuedAt, $documentType, $series, $number).'/'.$kind;
     }
 
-    public function put(string $path, string $contents): string
+    public function put(string $path, string $contents, bool $overwrite = false): string
     {
+        if (! $overwrite && $this->disk()->exists($path)) {
+            throw new RuntimeException("El artefacto fiscal ya existe: {$path}");
+        }
+
         $this->disk()->put($path, $contents);
 
         return hash('sha256', $contents);
