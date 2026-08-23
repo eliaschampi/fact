@@ -1,122 +1,61 @@
-# TASK.md — Ledger de ejecución
+# TASK.md — vertical activo
 
-Único archivo que se muta en cada sesión. Un vertical por sesión. Un criterio
-no cubierto por test no cuenta como hecho.
+Único archivo que se muta cada sesión. Un vertical por sesión. Un criterio
+sin test no cuenta como hecho. Ley: `docs/SPEC.md`. Hechos: `docs/STATUS.md`.
 
 ## Estado
 
-| Campo                | Valor                                 |
-| -------------------- | ------------------------------------- |
-| Fase                 | **V0 Fundación** — codebase arrancado |
-| Siguiente sesión     | **V1 Catálogo**                       |
-| Última actualización | 2026-08-23 (V0 hardening)             |
-
-Verificado en esta sesión: Laravel 13.26.1, PHP 8.5.8, Greenter lite **5.3.0**,
-Inertia 3.3.1, PostgreSQL 18.4, endpoints SUNAT oficiales (ver `SPEC.md` §4).
-
-Documentos de brainstorm archivados en `olddocs/necofact-founding/` (no son
-autoridad). Quedan `README.md`, `SPEC.md`, este archivo.
+| Campo                | Valor           |
+| -------------------- | --------------- |
+| Fase                 | V0 cerrado      |
+| Siguiente sesión     | **V1 Catálogo** |
+| Última actualización | 2026-08-23      |
 
 ---
 
-## V0 — Fundación
+## V0 — Fundación (cerrado)
 
-**Frase:** arrancó el sistema: hay login, sedes, permisos, cola y Greenter.
-
-- [x] 0.1 `laravel/laravel` 13.10 + framework 13.26 · PHP `^8.5` · Inertia 3 ·
-      `.env` `es` / `es_PE` / `America/Lima`
-- [x] 0.2 `.gitignore` cubre `.env`, `.env.testing`, vendor, node_modules, storage
-- [x] 0.3 `config/sunat.php` endpoints + plazos documentados · disco `fiscal` ·
-      queue/cache/session `database` · `LimaDate`
-- [x] 0.4 Migración auth+org+issuer (UUID `code`, `user_branches` explícito,
-      `branches.sunat_establishment_code`) · seed de permisos
-- [x] 0.5 Login Inertia + `Gate::before` + PermissionResolver + selector de sede
-- [x] 0.6 Svelte 5 + TS strict + Lumi `file:../lumi-ui` + alias `@/`
-- [x] 0.7 Greenter `lite` 5.3.0 + `gre-api` 1.0.2 · `ext-soap/zlib/openssl/curl` ·
-      `sunat:diagnose` (sin red)
-- [x] 0.8 PHPUnit contra `necofact_test` · TestCase builders · tests login/permisos/
-      TaxMath/CpeState/CDR/config
-- [x] 0.9 Tres documentos: `README.md` · `SPEC.md` · `TASK.md`
-
-**Hecho cuando:** `composer run check` y `pnpm run build` verdes; V0 merged.
-
-Núcleo fiscal ya presente (sin emisión): `Support/Sunat/*` (gateways, endpoints,
-TokenStore persistente, ArtifactStore), `TaxMath`, `CpeState`, `FakeCpeGateway`
-configurable. No hay `RecordSale` ni XML de producción todavía — eso es V5.
-
-Hardening post-review (misma sesión V0): ticket `99` → `failed` (no accepted);
-`queryTicket`/`queryCdr` no lanzan; `brick/math` declarado; ambiente
-`beta`/`production` unificado; `LimaDate` dueño del timezone; secretos fuera
-de `issuers`; `see()` removido; mapper queda en `Support/Sunat` (V5).
+Login, sede, permisos, Greenter 5.3, TaxMath, CpeState, adapters SUNAT.
+Checks verdes. Detalle en `docs/STATUS.md`.
 
 ---
 
-## Siguientes verticales (orden estricto V1→V5)
+## V1 — Catálogo (siguiente)
 
-### V1 — Catálogo
+**Frase:** hay productos vendibles con precio y afectación, por sede.
 
-Productos / variantes con `unit_code` (Cat. 03, default `NIU`) y
-`tax_affectation` (Cat. 07, default `10`). `/products`. Seed 10/20/30.
+Leer `docs/SPEC.md` §2 (layout) y §4 catálogo/inventario. Evidencia:
+Faztore `product_variants` (sku, precio, no stock en el producto).
 
-### V2 — Cliente esencial
+- [ ] Migración `products` + `product_variants`: `unit_code` Cat. 03 default
+      `NIU`; `tax_affectation` Cat. 07 default `'10'`; precios `decimal(12,2)`;
+      sku único lower; `issuer_code`.
+- [ ] Actions + FormRequests + `/products` (Index/Form) con
+      `products.view` / `products.manage`.
+- [ ] Seed demo: 3 productos, afectaciones 10 / 20 / 30.
+- [ ] Feature test: crear/editar/inactivar; inactivo no se opera en el Action.
 
-`customers` con Cat. 06, UNIQUE emisor+tipo+número, consumidor final
-`0`/`00000000`. Factura exige RUC. Boleta ≥ 700 exige identidad.
-
-### V3 — Inventario + compras
-
-Balances sparse, compras `in_transit|received|cancelled`, costo promedio
-`NUMERIC`, `FOR UPDATE` al recibir.
-
-### V4 — Caja ledger
-
-Sólo efectivo. Advisory lock. Reversión, nunca DELETE. Mixto: Yape no entra.
-
-### V5 — Venta + Factura E2E
-
-La transacción única: sale + stock + caja cash + correlativo + snapshot +
-`SendCpeJob` afterCommit. `getXmlSigned` → persistir → `sendXmlFile`.
-Golden fixture factura. Fake CDR 0. Timeout post-write no reserva F001-(n+1).
-
-### V6 — Boleta + RC
-
-`pending_summary` → resumen del día → ticket 98/0/99. RC rechazado no acepta
-a medias.
-
-### V7 — PDF + `/c/{token}`
-
-`PdfEngine` spawn JSON. El CPE no depende del PDF.
-
-### V8 — Nota de crédito `07`
-
-`VoidSale` comercial sólo después de NC accepted.
-
-### V9 — Recuperación
-
-`/cpe`, `ReconcileCpeJob`, `sunat:smoke` fuera de CI, techo → `manual_review`.
-
-### V10 — GRE remitente
-
-REST + TokenStore (ya hay adapter). Motivo 01 y 04. No mueve stock.
-
-### V11 — Transferencia de stock
-
-Inmutable si hay GRE ligada.
-
-### V12 — Hardening y piloto
-
-`/settings/issuer`, PEM, alertas de certificado, beta `MODDATOS` → piloto real.
+**Hecho cuando:** el usuario entra a `/products`, registra una variante
+gravada, la ve en el listado, y un test impide operar la inactiva.
+`composer run check` y `pnpm run build` verdes. `docs/STATUS.md` actualizado.
 
 ---
 
-## Hallazgos V0 (no son desvíos de SPEC)
+## Después (orden V2→V5 estricto)
 
-1. Packagist correcto: `greenter/lite` 5.3.0. `thegreenter/greenter` 404.
-2. `greenter/lite` no declara `gre-api`; GRE REST se añade con
-   `greenter/gre-api` ^1.0. `Greenter\Api` usa `InMemoryStore` por defecto;
-   NecoFact inyecta `CacheTokenStore`.
-3. Laravel 13 actual: framework **13.26.1**, PHP mínimo 8.3, usamos 8.5.8.
-4. Guzzle bajó 8 → 7.15 por `gre-api`. Aceptable; no tocar hasta que Greenter
-   declare Guzzle 8.
-5. `sunat.md` del brainstorm proponía `app/Domains/` y estado `draft`.
-   Rechazado: Actions + `reserved`, igual que el resto del SPEC.
+| V   | Frase                                                            |
+| --- | ---------------------------------------------------------------- |
+| 2   | El cajero registra DNI/RUC sin salir del ticket                  |
+| 3   | Compro in_transit, recibo, entra stock con costo promedio        |
+| 4   | La caja es el efectivo del cajero; Yape no entra                 |
+| 5   | Vendió, cobró, reservó F001-n, firmó XML, CDR fake 0             |
+| 6   | Boletas del día se informan con RC                               |
+| 7   | El adquirente descarga XML/PDF de un link firmado                |
+| 8   | F001-12 se corrige con NC; el XML original sigue                 |
+| 9   | Nada queda en limbo; unknown se consulta, error reintenta el XML |
+| 10  | T001 pide traslado; el stock lo movió Sale o Transfer            |
+| 11  | Moví stock entre sedes una vez                                   |
+| 12  | Un cliente real factura todos los días                           |
+
+Mecánica SQL y reglas: `docs/SPEC.md` §3–§4. No reabrir archivos
+archivados ni competir esta spec.

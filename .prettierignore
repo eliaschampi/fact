@@ -1,9 +1,6 @@
 # PHP is formatted by Laravel Pint.
 **/*.php
 
-# Archived founding notes — not the live spec.
-/olddocs
-
 # Generated, installed, or package-manager-owned files.
 /bootstrap/cache
 /node_modules
