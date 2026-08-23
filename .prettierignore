@@ -1,0 +1,11 @@
+# PHP is formatted by Laravel Pint.
+**/*.php
+
+# Generated, installed, or package-manager-owned files.
+/bootstrap/cache
+/node_modules
+/public/build
+/storage
+/vendor
+composer.lock
+pnpm-lock.yaml

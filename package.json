@@ -1,0 +1,33 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "oxlint --deny-warnings .",
+        "lint:fix": "oxlint --fix --deny-warnings .",
+        "typecheck": "svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js"
+    },
+    "devDependencies": {
+        "@inertiajs/svelte": "^3.6.1",
+        "@sveltejs/vite-plugin-svelte": "^7.3.0",
+        "@tsconfig/svelte": "^5.0.8",
+        "@types/node": "^26.2.0",
+        "concurrently": "^10.0.4",
+        "laravel-vite-plugin": "^3.2.0",
+        "oxlint": "^1.78.0",
+        "prettier": "^3.9.6",
+        "prettier-plugin-svelte": "^4.1.1",
+        "svelte": "^5.56.9",
+        "svelte-check": "^4.7.5",
+        "typescript": "^5.9.3",
+        "vite": "^8.1.4"
+    },
+    "dependencies": {
+        "@lumi-ui/svelte": "file:../lumi-ui"
+    }
+}

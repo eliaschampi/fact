@@ -1,0 +1,9 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["unicorn", "typescript", "oxc"],
+    "categories": {
+        "correctness": "error",
+        "suspicious": "warn"
+    },
+    "ignorePatterns": ["vendor", "node_modules", "public/build", "storage", "bootstrap/cache"]
+}

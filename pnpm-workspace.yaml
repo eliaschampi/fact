@@ -1,0 +1,5 @@
+# esbuild is an optional peer of vite 8 (which bundles rolldown). Its postinstall
+# only links a prebuilt native binary, so it is safe to allow. Approving it lets
+# pnpm's pre-run dependency check pass with no other overrides.
+allowBuilds:
+    esbuild: true

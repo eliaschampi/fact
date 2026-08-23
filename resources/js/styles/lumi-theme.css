@@ -1,0 +1,42 @@
+/**
+ * NecoFact theme — identity seeds only. Lumi derives surfaces, borders, and
+ * component styling. No raw CSS colors in pages.
+ *
+ * Identity: deep teal × warm gold on cool paper. Distinct from Aeduca's indigo.
+ */
+:root {
+    --lumi-brand-primary: oklch(0.48 0.1 195);
+    --lumi-brand-secondary: oklch(0.62 0.13 75);
+
+    --lumi-status-success: oklch(0.54 0.14 155);
+    --lumi-status-warning: oklch(0.78 0.15 75);
+    --lumi-status-danger: oklch(0.56 0.19 22);
+    --lumi-status-info: oklch(0.52 0.12 220);
+
+    --lumi-color-canvas: color-mix(in oklch, var(--lumi-brand-primary) 6%, oklch(0.985 0.004 210));
+    --lumi-color-neutral: oklch(0.29 0.02 210);
+
+    --lumi-app-background-accent: linear-gradient(transparent, transparent);
+    --lumi-gradient-app: linear-gradient(
+        var(--lumi-color-background),
+        var(--lumi-color-background)
+    );
+    --lumi-app-pattern-line-color: color-mix(in oklch, var(--lumi-color-primary) 7.5%, transparent);
+}
+
+.lumi-dashboard-layout {
+    --lumi-dashboard-content-bg: transparent;
+}
+
+[data-theme='dark'] {
+    --lumi-color-canvas: oklch(0.19 0.02 210);
+    --lumi-color-neutral: oklch(0.94 0.006 210);
+
+    --lumi-app-background-accent: radial-gradient(
+        farthest-side at 6% -10%,
+        color-mix(in oklch, var(--lumi-color-primary) 30%, transparent),
+        color-mix(in oklch, var(--lumi-color-primary) 14%, transparent) 38%,
+        transparent 72%
+    );
+    --lumi-app-pattern-line-color: color-mix(in oklch, var(--lumi-color-white) 5%, transparent);
+}
