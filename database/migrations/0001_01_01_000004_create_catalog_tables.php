@@ -43,10 +43,12 @@ return new class extends Migration
 
             $table->unique(['issuer_code', 'sku'], 'product_variants_sku_uq');
             $table->index('product_code');
+            // Restrict, not cascade: a variant is never deleted, so a
+            // product row cannot disappear while variants reference it.
             $table->foreign('product_code')
                 ->references('code')
                 ->on('products')
-                ->cascadeOnDelete();
+                ->restrictOnDelete();
             $table->foreign('issuer_code')
                 ->references('code')
                 ->on('issuers')

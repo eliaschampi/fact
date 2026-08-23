@@ -36,7 +36,9 @@ final class SaveProductRequest extends FormRequest
             'variants.*.tax_affectation' => [
                 'required', 'string', Rule::in(TaxMath::V1_AFFECTATIONS),
             ],
-            'variants.*.price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
+            'variants.*.price' => [
+                'required', 'decimal:0,6', 'min:0', 'max:9999999999.99',
+            ],
         ];
     }
 
@@ -61,7 +63,7 @@ final class SaveProductRequest extends FormRequest
             'variants.*.unit_code.*' => 'Selecciona una unidad válida (Cat. 03).',
             'variants.*.tax_affectation.*' => 'Selecciona una afectación IGV válida (Cat. 07).',
             'variants.*.price.required' => 'Escribe el precio de la variante.',
-            'variants.*.price.numeric' => 'El precio debe ser un número.',
+            'variants.*.price.decimal' => 'El precio debe ser un número decimal.',
             'variants.*.price.min' => 'El precio no puede ser negativo.',
             'variants.*.price.max' => 'El precio supera el límite del sistema.',
         ];

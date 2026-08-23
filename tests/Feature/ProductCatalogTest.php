@@ -106,6 +106,19 @@ class ProductCatalogTest extends TestCase
             ->assertSessionHasErrors('variants.0.tax_affectation');
     }
 
+    public function test_store_rejects_non_decimal_price(): void
+    {
+        $account = $this->createStaffAccount();
+        $this->grantPermissions($account, ['products.manage']);
+
+        $payload = $this->productPayload();
+        $payload['variants'][0]['price'] = '1e5';
+
+        $this->actingAs($account)
+            ->post('/products', $payload)
+            ->assertSessionHasErrors('variants.0.price');
+    }
+
     public function test_update_edits_variant_and_deactivates_product(): void
     {
         $account = $this->createStaffAccount();

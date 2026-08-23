@@ -3,10 +3,13 @@
 Sólo hechos que el código y los tests demuestran. Decisiones permanentes:
 [`SPEC.md`](SPEC.md). Ejecución: `TASK.md` en la raíz.
 
-**Última verificación:** 2026-08-23 (V0 + V1 Catálogo).
+**Última verificación:** 2026-08-23 (V0 + V1 Catálogo, con pase de
+integridad).
 
-`composer run check` verde: 49 tests / 163 assertions · Pint · svelte-check ·
-oxlint · Prettier. `pnpm run build` verde.
+`composer run check` verde: 50 tests / 165 assertions · Pint · svelte-check ·
+oxlint · Prettier. `pnpm run build` verde. `down()` de la migración probado;
+CHECKs, UNIQUE e índices trgm verificados en la base; FKs en `restrict`
+(la variante no se borra ni por cascada).
 
 ## Implementado
 
