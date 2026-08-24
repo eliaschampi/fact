@@ -114,7 +114,9 @@ interno en v1.
 - Dinero: caja `NUMERIC(12,2)` + `Money` (céntimos); cantidades `INTEGER`;
   líneas fiscales `NUMERIC(16,6)` unitario y `NUMERIC(12,2)` bases/IGV.
   `TaxMath` es el único dueño del IGV. Afectaciones v1: `10` `20` `30`.
-  Half-up a 2 en la línea, luego suma. Nunca `float` como fuente.
+  `igvBase` es la base del TaxSubtotal UBL (positiva también en `20`/`30`).
+  El agregado gravado suma sólo afectación `10`. Half-up a 2 en la línea,
+  luego suma. Nunca `float` como fuente. Nunca `(int)` sobre un código SUNAT.
 - Jobs `afterCommit`. Idempotentes: no-op si el estado ya es terminal.
 - CI sin red a SUNAT.
 
@@ -236,21 +238,23 @@ factura.
 
 | CDR                         | Estado fiscal                      |
 | --------------------------- | ---------------------------------- |
-| 0, sin notes                | `accepted`                         |
-| 0 con notes, o `>= 4000`    | `accepted_with_observations`       |
+| `0`, sin notes              | `accepted`                         |
+| `0` con notes, o `>= 4000`  | `accepted_with_observations`       |
 | presente y `!isAccepted`    | `rejected` (típicamente 2000–3999) |
 | `applicationResponse` vacío | `transport_error` / `unknown`      |
+| código no numérico          | `unknown` (nunca `(int)` PHP)      |
 
 SOAP success ≠ aceptación. Timeout post-write → `ConsultCdrService`, nunca
 un segundo correlativo. Rechazo de negocio: no retry del mismo XML.
 
 Tickets RC/RA (SOAP `getStatus`) y GRE (`codRespuesta`):
 
-| Código | `TicketResult` | Significado                                      |
-| ------ | -------------- | ------------------------------------------------ |
-| 98     | `pending`      | Sigue en proceso. Reencolar.                     |
-| 0      | `completed`    | Proceso terminó. Leer el CDR.                    |
-| 99     | `failed`       | Proceso con error. No aceptar. CDR puede existir |
+| Código                  | `TicketResult` | Significado                                       |
+| ----------------------- | -------------- | ------------------------------------------------- |
+| 98                      | `pending`      | Sigue en proceso. Reencolar.                      |
+| 0                       | `completed`    | Proceso terminó. Leer el CDR.                     |
+| 99                      | `failed`       | Proceso con error. No aceptar. CDR puede existir  |
+| otro, vacío, no dígitos | `error`        | Nunca `completed`. Comparar el string, no `(int)` |
 
 Greenter trata 0 y 99 como “ya no es 98”. El negocio sigue en el CDR.
 
@@ -265,12 +269,16 @@ transport_error → submitted (mismo XML)
 accepted → corrected (NC 07 accepted)
 ```
 
-`accepted ↛ reserved|signed`. `manual_review` es flag ortogonal.
+`accepted ↛ reserved|signed`. `manual_review` es flag ortogonal. El CDR
+original del `01` sigue siendo aceptado: `corrected` es la relación con
+la NC, no un nuevo resultado SUNAT. V8 persistirá `corrected_by`.
 
 ### Series y correlativo
 
 `F001` / `B001` / `T001` por sede. RC/RA `{ruc}-{RC\|RA}-{Ymd}-{n}`.
 Huecos se explican, no se rellenan.
+`UNIQUE (issuer_code, sunat_establishment_code)`; `0000` es el local
+principal.
 
 ```sql
 SELECT * FROM fiscal_series
@@ -294,8 +302,10 @@ Contrastar la guía vigente antes de go-live.
 
 `{issuer}/{yyyy}/{mm}/{tipo}-{serie}-{numero}/` en disco `fiscal`:
 `signed.xml`, `cdr.zip`, `cdr.xml`, `representation.pdf`.
-XML y CDR son inmutables (sha256 en DB). El PDF es regenerable y no es
-evidencia fiscal.
+XML y CDR son inmutables (sha256 en DB). Mismo SHA → replay; SHA
+distinto en la misma ruta → error de integridad. El PDF es regenerable y
+no es evidencia fiscal. La autoridad del correlativo es la fila
+`fiscal_documents`, no el disco.
 
 ---
 
@@ -309,16 +319,18 @@ SQL tomado de Faztore/Coedula y adaptado a NecoFact. No pegar Kysely.
 `product_variants` es lo vendible y el portador de los defaults fiscales
 de línea: `sku` único lower por emisor, `unit_code` Cat. 03 v1
 (`NIU`/`ZZ`), `tax_affectation` Cat. 07 v1 (`10`/`20`/`30`),
-`price NUMERIC(12,2)` **IGV incluido**. La venta (V5) snapshotea precio,
-unidad y afectación en la línea: editar el catálogo jamás reescribe una
-venta.
+`price NUMERIC(12,2)` **IGV incluido**. `issuer_code` de la variante está
+atado al del producto (`UNIQUE (code, issuer_code)` + FK compuesta). La
+venta (V5) snapshotea precio, unidad y afectación en la línea: editar el
+catálogo jamás reescribe una venta.
 
 - Producto inactivo no se opera: `SaveProduct` sobre un inactivo sólo
   acepta guardado que lo reactiva; `RecordSale` reutiliza el mismo guard.
 - La variante no se borra (`sale_items` la referenciará): corrección =
   edición. Nunca DELETE.
 - Sin tablas de catálogo SUNAT: los valores v1 los poseen los CHECK.
-  `cost_price` e inventario llegan con V3.
+  `cost_price NUMERIC(12,2)` vive en la variante; lo actualiza la recepción
+  de compras (promedio ponderado, `Money::weightedAverageCost`).
 - Búsqueda por trigram GIN sobre `products.name` y `product_variants.sku`.
 
 ### Clientes
@@ -330,7 +342,8 @@ editable.
 
 - DNI = 8 dígitos ≠ `00000000`. RUC = 11 dígitos + dígito verificador
   módulo 11 (factores `5,4,3,2,7,6,5,4,3,2`; `dv = (11 − resto) % 10`),
-  validado en entrada para no descubrir el error en SUNAT.
+  validado en entrada y con CHECK SQL de forma (el DV sigue en PHP)
+  para no descubrir el error en SUNAT.
 - `UNIQUE (issuer_code, doc_type, doc_number)`. Consumidor final: una
   fila por emisor, `0` / `00000000`, la crea el sistema; no se edita ni
   se borra.

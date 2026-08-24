@@ -16,7 +16,12 @@ class BranchFactory extends Factory
         return [
             'issuer_code' => Issuer::factory(),
             'name' => fake()->unique()->city(),
-            'sunat_establishment_code' => '0000',
+            'sunat_establishment_code' => str_pad(
+                (string) fake()->unique()->numberBetween(1, 9999),
+                4,
+                '0',
+                STR_PAD_LEFT,
+            ),
             'is_active' => true,
         ];
     }

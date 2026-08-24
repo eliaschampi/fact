@@ -5,11 +5,11 @@ sin test no cuenta como hecho. Ley: `docs/SPEC.md`. Hechos: `docs/STATUS.md`.
 
 ## Estado
 
-| Campo                | Valor          |
-| -------------------- | -------------- |
-| Fase                 | V2 cerrado     |
-| Siguiente sesión     | **V3 Compras** |
-| Última actualización | 2026-08-23     |
+| Campo                | Valor       |
+| -------------------- | ----------- |
+| Fase                 | V3 cerrado  |
+| Siguiente sesión     | **V4 Caja** |
+| Última actualización | 2026-08-24  |
 
 ---
 
@@ -42,9 +42,8 @@ reactivación (SPEC §4 Catálogo). Checks verdes 2026-08-23: 49 tests /
 
 **Frase:** el cajero registra DNI/RUC sin salir del ticket.
 
-- [x] Migración `customers`: Cat. 06 v1 (`0`/`1`/`6`), `UNIQUE
-    (issuer_code, doc_type, doc_number)`, trgm en nombre, índice en
-      documento.
+- [x] Migración `customers`: Cat. 06 v1 (`0`/`1`/`6`), identidad
+      única por emisor, trgm en nombre, índice en documento.
 - [x] `Support\RucNumber` (módulo 11, factores 5,4,3,2,7,6,5,4,3,2;
       `dv = (11 − resto) % 10`, verificado contra stdnum) + validación
       por tipo de documento en `SaveCustomerRequest`.
@@ -56,6 +55,46 @@ reactivación (SPEC §4 Catálogo). Checks verdes 2026-08-23: 49 tests /
 
 El diálogo desde el ticket (POS) llega con V5; V2 entrega el registro
 esencial. Checks verdes 2026-08-23: 63 tests / 211 assertions.
+
+---
+
+## Endurecimiento pre-V3 (cerrado)
+
+**Frase:** los invariantes fiscales ya escritos no mienten; PostgreSQL
+guarda lo que el Action ya escribía bien.
+
+- [x] `CdrOutcome` / `TicketResult` fail-closed: código no numérico ≠
+      aceptación (`(int)'foo' === 0` ya no clasifica).
+- [x] `LineComputation.igvBase`: UBL TaxSubtotal positivo también en
+      `20`/`30`; el agregado gravado sigue sumando sólo `10`.
+- [x] `ArtifactStore`: create-if-absent atómico; mismo SHA = replay;
+      SHA distinto = error de integridad.
+- [x] FK compuesta variante↔producto+emisor; `UNIQUE` establecimiento
+      por emisor; CHECK de forma DNI/RUC; GRE OAuth exige secret.
+- [x] Un staff de test comparte un `issuer` entre sus sedes.
+      `phpunit.xml` clava `pgsql` / `necofact_test`.
+
+No es V3. No hay compras, stock, caja ni `fiscal_*`. Checks 2026-08-24:
+70 tests / 234 assertions, Pint, svelte-check, oxlint, Prettier, build.
+
+---
+
+## V3 — Compras (cerrado)
+
+**Frase:** compro in_transit, recibo, entra stock con costo promedio.
+
+- [x] `product_variants.cost_price`; `inventory_balances` sparse
+      `(variant_code, branch_code)` con CHECK `on_hand >= 0`.
+- [x] `purchases` + `purchase_items`: default `in_transit`;
+      `PUR-000001` por emisor; UNIQUE variante por compra.
+- [x] `RecordPurchase` / `ReceivePurchase` / `CancelPurchase`:
+      receive lock + delta + promedio ponderado; cancel received resta;
+      in_transit no mueve stock; producto inactivo no se opera.
+- [x] `/purchases` Index/Form/Show y `/inventory` con
+      `purchases.view/manage` e `inventory.view`. Sin caja ni GRE.
+
+Checks 2026-08-24: 80 tests / 276 assertions, Pint, svelte-check, oxlint,
+Prettier, build. `down()` de `000007` verde.
 
 ---
 

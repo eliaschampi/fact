@@ -10,7 +10,7 @@ final readonly class LineComputation
         public string $unitPriceInclusive,
         public string $unitValue,
         public string $unitPrice,
-        public string $taxableBase,
+        public string $igvBase,
         public string $igvPercent,
         public string $igv,
         public string $saleValue,

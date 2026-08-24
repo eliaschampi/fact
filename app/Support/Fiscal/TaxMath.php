@@ -55,7 +55,7 @@ final class TaxMath
                 unitPriceInclusive: self::scale2($price),
                 unitValue: $unitValue->__toString(),
                 unitPrice: self::scale2($price),
-                taxableBase: self::scale2($base),
+                igvBase: self::scale2($base),
                 igvPercent: $percent,
                 igv: self::scale2($igv),
                 saleValue: self::scale2($base),
@@ -63,17 +63,19 @@ final class TaxMath
             );
         }
 
+        $saleValue = self::scale2($lineGross);
+
         return new LineComputation(
             affectation: $affectation,
             quantity: $quantity,
             unitPriceInclusive: self::scale2($price),
             unitValue: self::scale2($price),
             unitPrice: self::scale2($price),
-            taxableBase: '0.00',
+            igvBase: $saleValue,
             igvPercent: '0',
             igv: '0.00',
-            saleValue: self::scale2($lineGross),
-            lineTotal: self::scale2($lineGross),
+            saleValue: $saleValue,
+            lineTotal: $saleValue,
         );
     }
 
@@ -95,7 +97,7 @@ final class TaxMath
             $total = $total->plus($line->lineTotal);
 
             match ($line->affectation) {
-                self::AFFECTATION_GRAVADO => $taxable = $taxable->plus($line->taxableBase),
+                self::AFFECTATION_GRAVADO => $taxable = $taxable->plus($line->igvBase),
                 self::AFFECTATION_EXONERADO => $exempt = $exempt->plus($line->saleValue),
                 self::AFFECTATION_INAFECTO => $unaffect = $unaffect->plus($line->saleValue),
                 default => throw new InvalidArgumentException('Afectación IGV no soportada en v1.'),

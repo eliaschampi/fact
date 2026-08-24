@@ -30,6 +30,20 @@ export const APP_NAVIGATION: readonly NavigationItem[] = [
         permission: 'customers.view',
     },
     {
+        label: 'Compras',
+        href: '/purchases',
+        icon: 'shoppingCart',
+        permission: 'purchases.view',
+        requiresBranch: true,
+    },
+    {
+        label: 'Inventario',
+        href: '/inventory',
+        icon: 'boxes',
+        permission: 'inventory.view',
+        requiresBranch: true,
+    },
+    {
         label: 'Sedes',
         href: '/branches',
         icon: 'building2',

@@ -35,4 +35,11 @@ class MoneyTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         Money::normalize('abc');
     }
+
+    public function test_weighted_average_cost_uses_on_hand_and_incoming(): void
+    {
+        $this->assertSame('5.00', Money::weightedAverageCost(0, '0.00', 10, '5.00'));
+        $this->assertSame('10.00', Money::weightedAverageCost(10, '5.00', 10, '15.00'));
+        $this->assertSame('7.50', Money::weightedAverageCost(2, '5.00', 2, '10.00'));
+    }
 }

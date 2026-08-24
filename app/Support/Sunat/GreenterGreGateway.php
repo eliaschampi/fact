@@ -80,7 +80,7 @@ final class GreenterGreGateway implements GreGateway
     {
         $credentials = SunatCredentials::fromConfig();
 
-        if (! $credentials->hasCertificate() || ! $credentials->hasSol() || $credentials->greClientId === null) {
+        if (! $credentials->hasCertificate() || ! $credentials->hasSol() || ! $credentials->hasGreOAuth()) {
             throw new RuntimeException(
                 'GRE requiere certificado, Clave SOL y client_id/client_secret OAuth.',
             );

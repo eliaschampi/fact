@@ -3,32 +3,31 @@
 Sólo hechos que el código y los tests demuestran. Decisiones permanentes:
 [`SPEC.md`](SPEC.md). Ejecución: `TASK.md` en la raíz.
 
-**Última verificación:** 2026-08-23 (V0 + V1 Catálogo + V2 Cliente).
+**Última verificación:** 2026-08-24 (V0–V3 Compras).
 
-`composer run check` verde: 63 tests / 211 assertions · Pint · svelte-check ·
-oxlint · Prettier. `pnpm run build` verde. `down()` de migraciones probado;
-CHECKs, UNIQUE e índices trgm verificados en la base; FKs en `restrict`
-(la variante no se borra ni por cascada).
+`composer run check` verde: 80 tests / 276 assertions · Pint · svelte-check ·
+oxlint · Prettier. `pnpm run build` verde. `down()` de `000007` probado.
 
 ## Implementado
 
-| Área        | Hecho                                                                                                                                                                                                                                                                                                                                                                                     |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Acceso      | `AuthAccount` + `User`; login throttled con dummy-hash; logout invalida sesión                                                                                                                                                                                                                                                                                                            |
-| Sedes       | `issuer` + `branches` (`sunat_establishment_code`); selector de sesión; `user_branches` explícito                                                                                                                                                                                                                                                                                         |
-| Permisos    | `dominio.view/manage`; grants ∩ role scope; superadmin = catálogo; `Gate::before` + `can()` UX-only                                                                                                                                                                                                                                                                                       |
-| Front       | Inertia 3 + Svelte 5 runes + Lumi; shell login/inicio/sedes/productos                                                                                                                                                                                                                                                                                                                     |
-| Fiscal core | `TaxMath` (10/20/30, half-up, brick/math); `CpeState`; gateways Greenter; `CacheTokenStore`; `ArtifactStore` inmutable; `Greenter\*` importado sólo en `Support/Sunat`                                                                                                                                                                                                                    |
-| Tickets     | 98 pending · 0 completed · 99 failed; `queryTicket`/`queryCdr` no lanzan                                                                                                                                                                                                                                                                                                                  |
-| Config      | `config/sunat.php` endpoints, plazos, par beta `MODDATOS`/`MODDATOS`; ambiente `beta`/`production`; disco `fiscal`; `LimaDate`; cola database `after_commit`                                                                                                                                                                                                                              |
-| Diagnose    | `php artisan sunat:diagnose` (sin red)                                                                                                                                                                                                                                                                                                                                                    |
-| Catálogo    | `products` + `product_variants`: sku lower único por emisor, `unit_code` Cat. 03 (`NIU`/`ZZ`) y `tax_affectation` Cat. 07 (`10`/`20`/`30`) en la variante, precio `NUMERIC(12,2)` IGV incluido; CHECKs nombrados + trgm GIN; `SaveProduct` (transacción, guard inactivo ⇒ sólo reactivar, variante nunca se borra); `/products` Index+Form con `products.view/manage`; seed demo 10/20/30 |
-| Clientes    | `customers`: Cat. 06 v1 (`0`/`1`/`6`), `UNIQUE (issuer_code, doc_type, doc_number)`, trgm nombre + índice documento; `RucNumber` módulo 11 verificado contra stdnum; `SaveCustomer` con consumidor final no editable y duplicado amigable (savepoint); `/customers` Index+Form con `customers.view/manage`; seed: consumidor final + DNI + RUC                                            |
+| Área        | Hecho                                                                                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Acceso      | `AuthAccount` + `User`; login throttled con dummy-hash; logout invalida sesión                                                                                                       |
+| Sedes       | `issuer` + `branches`; `UNIQUE` establecimiento; selector de sesión; `user_branches` explícito                                                                                       |
+| Permisos    | `dominio.view/manage`; grants ∩ role scope; superadmin = catálogo; `Gate::before` + `can()` UX-only                                                                                  |
+| Front       | Inertia 3 + Svelte 5 runes + Lumi; shell login/inicio/sedes/productos/clientes/compras/inventario                                                                                    |
+| Fiscal core | `TaxMath` (`igvBase`); `CpeState`; gateways Greenter; `ArtifactStore` write-once; `Greenter\*` sólo en `Support/Sunat`                                                               |
+| Tickets     | 98/0/99; código no numérico = `unknown`/`error`; `queryTicket`/`queryCdr` no lanzan                                                                                                  |
+| Config      | `config/sunat.php`; disco `fiscal`; `LimaDate`; cola `after_commit`; tests `pgsql`/`necofact_test`                                                                                   |
+| Catálogo    | productos/variantes; `cost_price NUMERIC(12,2)`; FK compuesta issuer; CHECKs + trgm; `SaveProduct`                                                                                   |
+| Clientes    | Cat. 06; UNIQUE identidad; CHECK DNI/RUC; `RucNumber`; consumidor final de sistema                                                                                                   |
+| Compras     | `purchases` default `in_transit`; `PUR-` por emisor; receive con lock, stock + y costo promedio ponderado; cancel received resta; inactivo no se opera; `/purchases` Index/Form/Show |
+| Inventario  | `inventory_balances` sparse `(variant_code, branch_code)` CHECK `on_hand >= 0`; `/inventory` saldos por sede; `InventoryBalance::applyDelta` (insertOrIgnore + increment)            |
 
-## No implementado (siguiente: V3)
+## No implementado (siguiente: V4)
 
-Inventario, compras, caja ledger, ventas, tablas
-`fiscal_*`, jobs de envío, PDF binario, GRE de producto, settings de emisor.
+Caja ledger, ventas, tablas `fiscal_*`, jobs de envío, PDF binario, GRE,
+transferencias entre sedes, settings de emisor.
 
 Secretos SUNAT se leen de env. `issuers` no guarda PEM ni Clave SOL.
 

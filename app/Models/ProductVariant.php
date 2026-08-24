@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'product_code',
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'unit_code',
     'tax_affectation',
     'price',
+    'cost_price',
 ])]
 class ProductVariant extends Model
 {
@@ -40,10 +42,16 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class, 'product_code', 'code');
     }
 
+    public function balances(): HasMany
+    {
+        return $this->hasMany(InventoryBalance::class, 'variant_code', 'code');
+    }
+
     protected function casts(): array
     {
         return [
             'price' => 'decimal:2',
+            'cost_price' => 'decimal:2',
         ];
     }
 }

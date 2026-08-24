@@ -7,6 +7,7 @@ use App\Support\Sunat\ArtifactStore;
 use App\Support\Sunat\CacheTokenStore;
 use App\Support\Sunat\CpeGateway;
 use App\Support\Sunat\GreenterCpeGateway;
+use App\Support\Sunat\SunatCredentials;
 use App\Support\Sunat\SunatEndpoints;
 use Carbon\CarbonImmutable;
 use Greenter\See;
@@ -62,5 +63,19 @@ class SunatConfigTest extends TestCase
     {
         $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', LimaDate::businessDate());
         $this->assertSame('America/Lima', LimaDate::TIMEZONE);
+    }
+
+    public function test_gre_oauth_requires_both_client_id_and_secret(): void
+    {
+        config([
+            'sunat.gre_oauth.client_id' => 'client-id',
+            'sunat.gre_oauth.client_secret' => null,
+        ]);
+
+        $this->assertFalse(SunatCredentials::fromConfig()->hasGreOAuth());
+
+        config(['sunat.gre_oauth.client_secret' => 'client-secret']);
+
+        $this->assertTrue(SunatCredentials::fromConfig()->hasGreOAuth());
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Issuer;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 class ProductCatalogTest extends TestCase
@@ -117,6 +118,31 @@ class ProductCatalogTest extends TestCase
         $this->actingAs($account)
             ->post('/products', $payload)
             ->assertSessionHasErrors('variants.0.price');
+    }
+
+    public function test_store_rejects_price_with_more_than_two_decimals(): void
+    {
+        $account = $this->createStaffAccount();
+        $this->grantPermissions($account, ['products.manage']);
+
+        $payload = $this->productPayload();
+        $payload['variants'][0]['price'] = '18.505';
+
+        $this->actingAs($account)
+            ->post('/products', $payload)
+            ->assertSessionHasErrors('variants.0.price');
+    }
+
+    public function test_variant_cannot_belong_to_a_different_issuer_than_its_product(): void
+    {
+        $product = Product::factory()->create();
+        $otherIssuer = Issuer::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        ProductVariant::factory()->forProduct($product)->create([
+            'issuer_code' => $otherIssuer->code,
+        ]);
     }
 
     public function test_update_edits_variant_and_deactivates_product(): void

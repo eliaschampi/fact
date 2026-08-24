@@ -37,7 +37,7 @@ final class SaveProductRequest extends FormRequest
                 'required', 'string', Rule::in(TaxMath::V1_AFFECTATIONS),
             ],
             'variants.*.price' => [
-                'required', 'decimal:0,6', 'min:0', 'max:9999999999.99',
+                'required', 'decimal:0,2', 'min:0', 'max:9999999999.99',
             ],
         ];
     }

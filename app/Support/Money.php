@@ -61,4 +61,30 @@ final class Money
     {
         return abs($cents) <= self::MAX_CENTS;
     }
+
+    public static function weightedAverageCost(
+        int $onHand,
+        string $currentCost,
+        int $incomingQuantity,
+        string $unitCost,
+    ): string {
+        if ($incomingQuantity < 1) {
+            throw new InvalidArgumentException('La cantidad debe ser un entero positivo.');
+        }
+
+        $incoming = BigDecimal::of(self::normalize($unitCost));
+
+        if ($onHand <= 0) {
+            return self::normalize($unitCost);
+        }
+
+        $current = BigDecimal::of(self::normalize($currentCost));
+        $totalQuantity = $onHand + $incomingQuantity;
+
+        return $current
+            ->multipliedBy($onHand)
+            ->plus($incoming->multipliedBy($incomingQuantity))
+            ->dividedBy($totalQuantity, 2, RoundingMode::HalfUp)
+            ->__toString();
+    }
 }

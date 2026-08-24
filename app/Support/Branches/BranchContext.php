@@ -6,6 +6,7 @@ use App\Models\AuthAccount;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 final class BranchContext
 {
@@ -28,7 +29,7 @@ final class BranchContext
         $branches = $account->user?->branches()
             ->active()
             ->orderBy('branches.name')
-            ->get(['branches.code', 'branches.name'])
+            ->get(['branches.code', 'branches.name', 'branches.issuer_code'])
             ?? collect();
 
         $this->request->attributes->set($cacheKey, $branches);
@@ -54,5 +55,18 @@ final class BranchContext
         }
 
         return $current;
+    }
+
+    public function requireCurrent(AuthAccount $account): Branch
+    {
+        $branch = $this->currentBranch($account);
+
+        if ($branch === null) {
+            throw ValidationException::withMessages([
+                'branch' => 'Selecciona una sede de trabajo para continuar.',
+            ]);
+        }
+
+        return $branch;
     }
 }

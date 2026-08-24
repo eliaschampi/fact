@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Branch;
+use App\Models\Issuer;
+use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 class BranchSelectionTest extends TestCase
@@ -17,6 +20,16 @@ class BranchSelectionTest extends TestCase
 
         $this->assertSame($target->code, session('current_branch_code'));
         $this->assertSame($target->code, $account->user->fresh()->preferred_branch_code);
+    }
+
+    public function test_establishment_code_is_unique_per_issuer(): void
+    {
+        $issuer = Issuer::factory()->create();
+        Branch::factory()->for($issuer)->create(['sunat_establishment_code' => '0001']);
+
+        $this->expectException(QueryException::class);
+
+        Branch::factory()->for($issuer)->create(['sunat_establishment_code' => '0001']);
     }
 
     public function test_staff_cannot_select_an_unassigned_branch(): void

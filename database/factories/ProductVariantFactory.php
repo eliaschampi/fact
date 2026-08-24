@@ -15,10 +15,14 @@ class ProductVariantFactory extends Factory
     {
         return [
             'product_code' => Product::factory(),
+            'issuer_code' => fn (array $attributes): string => (string) Product::query()
+                ->whereKey($attributes['product_code'])
+                ->value('issuer_code'),
             'sku' => fake()->unique()->regexify('[a-z]{5}-[0-9]{4}'),
             'unit_code' => ProductVariant::UNIT_NIU,
             'tax_affectation' => '10',
             'price' => '18.50',
+            'cost_price' => '0.00',
         ];
     }
 

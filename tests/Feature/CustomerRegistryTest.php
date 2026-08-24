@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\Issuer;
+use Illuminate\Database\QueryException;
 use Tests\TestCase;
 
 class CustomerRegistryTest extends TestCase
@@ -90,6 +91,16 @@ class CustomerRegistryTest extends TestCase
                 docNumber: '20512333798',
             ))
             ->assertSessionHasErrors('doc_number');
+    }
+
+    public function test_sql_rejects_dni_with_wrong_length(): void
+    {
+        $this->expectException(QueryException::class);
+
+        Customer::factory()->create([
+            'doc_type' => Customer::DOC_DNI,
+            'doc_number' => '1234567',
+        ]);
     }
 
     public function test_store_rejects_dni_with_wrong_length(): void

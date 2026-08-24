@@ -45,11 +45,11 @@ final readonly class TicketResult
         array $notes = [],
         ?string $faultMessage = null,
     ): self {
-        $status = match (true) {
-            $statusCode === null, $statusCode === '' => self::ERROR,
-            (int) $statusCode === 98 => self::PENDING,
-            (int) $statusCode === 0 => self::COMPLETED,
-            (int) $statusCode === 99 => self::FAILED,
+        $status = match ($statusCode) {
+            null, '' => self::ERROR,
+            '98' => self::PENDING,
+            '0' => self::COMPLETED,
+            '99' => self::FAILED,
             default => self::ERROR,
         };
 

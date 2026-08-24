@@ -35,4 +35,16 @@ class CdrOutcomeTest extends TestCase
 
         $this->assertSame(CpeState::REJECTED, $outcome->status);
     }
+
+    public function test_non_numeric_code_is_unknown_not_accepted(): void
+    {
+        $garbage = CdrOutcome::fromCode('foobar', 'basura');
+        $leading = CdrOutcome::fromCode('0foo', 'basura');
+        $blank = CdrOutcome::fromCode('', 'vacío');
+
+        $this->assertSame(CpeState::UNKNOWN, $garbage->status);
+        $this->assertSame(CpeState::UNKNOWN, $leading->status);
+        $this->assertSame(CpeState::UNKNOWN, $blank->status);
+        $this->assertNotSame(CpeState::ACCEPTED, $garbage->status);
+    }
 }

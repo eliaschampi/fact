@@ -39,4 +39,10 @@ final readonly class SunatCredentials
     {
         return is_string($this->certificatePem) && $this->certificatePem !== '';
     }
+
+    public function hasGreOAuth(): bool
+    {
+        return is_string($this->greClientId) && $this->greClientId !== ''
+            && is_string($this->greClientSecret) && $this->greClientSecret !== '';
+    }
 }

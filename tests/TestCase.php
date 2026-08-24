@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Models\AuthAccount;
 use App\Models\Branch;
+use App\Models\Issuer;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -49,11 +50,22 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         if ($branchCount > 0) {
-            $branches = Branch::factory()->count($branchCount)->create();
+            $issuer = Issuer::factory()->create();
+            $branches = Branch::factory()
+                ->count($branchCount)
+                ->for($issuer)
+                ->create();
             $user->branches()->attach($branches);
         }
 
         return $account->load('user.role', 'user.branches');
+    }
+
+    protected function currentBranchSession(AuthAccount $account): array
+    {
+        $branch = $account->user->branches->first();
+
+        return $branch === null ? [] : ['current_branch_code' => $branch->code];
     }
 
     /**

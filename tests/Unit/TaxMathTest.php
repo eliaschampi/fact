@@ -11,7 +11,8 @@ class TaxMathTest extends TestCase
     {
         $line = TaxMath::line('118.00', 1, TaxMath::AFFECTATION_GRAVADO);
 
-        $this->assertSame('100.00', $line->taxableBase);
+        $this->assertSame('100.00', $line->igvBase);
+        $this->assertSame('100.00', $line->saleValue);
         $this->assertSame('18.00', $line->igv);
         $this->assertSame('118.00', $line->lineTotal);
         $this->assertSame('18', $line->igvPercent);
@@ -33,6 +34,10 @@ class TaxMathTest extends TestCase
         $unaffect = TaxMath::line('10.00', 1, TaxMath::AFFECTATION_INAFECTO);
         $totals = TaxMath::document([$exempt, $unaffect]);
 
+        $this->assertSame('20.00', $exempt->igvBase);
+        $this->assertSame('20.00', $exempt->saleValue);
+        $this->assertSame('0.00', $exempt->igv);
+        $this->assertSame('10.00', $unaffect->igvBase);
         $this->assertSame('0.00', $totals->taxable);
         $this->assertSame('20.00', $totals->exempt);
         $this->assertSame('10.00', $totals->unaffect);

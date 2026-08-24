@@ -1,6 +1,7 @@
 <script lang="ts">
     import { page, router } from '@inertiajs/svelte';
     import { Button, Card, EmptyState, PageHeader, QuickAccessCard } from '@lumi-ui/svelte';
+    import { can } from '@/lib/permissions';
 
     const auth = $derived(page.props.auth);
     const userName = $derived(auth ? `${auth.user.first_name} ${auth.user.last_name}` : '');
@@ -59,6 +60,24 @@
                 icon="building2"
                 color="secondary"
             />
+            {#if can('purchases.view')}
+                <QuickAccessCard
+                    href="/purchases"
+                    title="Compras"
+                    description="En tránsito y recepción de mercadería."
+                    icon="shoppingCart"
+                    color="primary"
+                />
+            {/if}
+            {#if can('inventory.view')}
+                <QuickAccessCard
+                    href="/inventory"
+                    title="Inventario"
+                    description="Saldos de la sede activa."
+                    icon="boxes"
+                    color="secondary"
+                />
+            {/if}
         </div>
     {/if}
 </div>

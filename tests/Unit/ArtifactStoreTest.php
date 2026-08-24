@@ -9,17 +9,31 @@ use Tests\TestCase;
 
 class ArtifactStoreTest extends TestCase
 {
-    public function test_signed_xml_is_immutable_once_written(): void
+    public function test_signed_xml_same_bytes_are_idempotent(): void
     {
         Storage::fake('fiscal');
         $store = app(ArtifactStore::class);
+        $path = '20100000000/2026/08/01-F001-1/signed.xml';
 
-        $hash = $store->put('20100000000/2026/08/01-F001-1/signed.xml', '<xml/>');
+        $first = $store->put($path, '<xml/>');
+        $second = $store->put($path, '<xml/>');
 
-        $this->assertSame(hash('sha256', '<xml/>'), $hash);
+        $this->assertSame(hash('sha256', '<xml/>'), $first);
+        $this->assertSame($first, $second);
+        $this->assertSame('<xml/>', Storage::disk('fiscal')->get($path));
+    }
+
+    public function test_signed_xml_rejects_different_bytes_at_the_same_path(): void
+    {
+        Storage::fake('fiscal');
+        $store = app(ArtifactStore::class);
+        $path = '20100000000/2026/08/01-F001-1/signed.xml';
+
+        $store->put($path, '<xml/>');
 
         $this->expectException(RuntimeException::class);
-        $store->put('20100000000/2026/08/01-F001-1/signed.xml', '<other/>');
+        $this->expectExceptionMessage('contenido distinto');
+        $store->put($path, '<other/>');
     }
 
     public function test_pdf_representation_may_be_overwritten(): void

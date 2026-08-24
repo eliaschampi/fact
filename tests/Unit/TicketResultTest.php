@@ -17,6 +17,10 @@ class TicketResultTest extends TestCase
         $this->assertSame(TicketResult::FAILED, TicketResult::fromSunatTicket('99')->status);
         $this->assertSame(TicketResult::ERROR, TicketResult::fromSunatTicket('127')->status);
         $this->assertSame(TicketResult::ERROR, TicketResult::fromSunatTicket(null)->status);
+        $this->assertSame(TicketResult::ERROR, TicketResult::fromSunatTicket('foobar')->status);
+        $this->assertSame(TicketResult::ERROR, TicketResult::fromSunatTicket('0foo')->status);
+        $this->assertSame(TicketResult::ERROR, TicketResult::fromSunatTicket('00')->status);
+        $this->assertSame(TicketResult::ERROR, TicketResult::fromSunatTicket('098')->status);
     }
 
     public function test_code_99_is_not_treated_as_accepted(): void
