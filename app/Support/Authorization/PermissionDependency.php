@@ -10,6 +10,11 @@ final class PermissionDependency
     /** @var list<string> */
     private const array VIEW_DEPENDENT_SUFFIXES = ['.manage', '.delete'];
 
+    /** @var array<string, list<string>> */
+    private const array EXPLICIT_DEPENDENCIES = [
+        'cashbox.supervise' => ['cashbox.view'],
+    ];
+
     /**
      * @param  list<string>  $names
      * @return list<string>
@@ -19,6 +24,10 @@ final class PermissionDependency
         $set = array_fill_keys($names, true);
 
         foreach ($names as $name) {
+            foreach (self::EXPLICIT_DEPENDENCIES[$name] ?? [] as $dependency) {
+                $set[$dependency] = true;
+            }
+
             foreach (self::VIEW_DEPENDENT_SUFFIXES as $suffix) {
                 if (! str_ends_with($name, $suffix)) {
                     continue;

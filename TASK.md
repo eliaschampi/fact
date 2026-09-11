@@ -7,9 +7,9 @@ sin test no cuenta como hecho. Ley: `docs/SPEC.md`. Hechos: `docs/STATUS.md`.
 
 | Campo                | Valor       |
 | -------------------- | ----------- |
-| Fase                 | V3 cerrado  |
+| Fase                 | V4 en curso |
 | Siguiente sesión     | **V4 Caja** |
-| Última actualización | 2026-08-24  |
+| Última actualización | 2026-09-03  |
 
 ---
 
@@ -95,6 +95,28 @@ No es V3. No hay compras, stock, caja ni `fiscal_*`. Checks 2026-08-24:
 
 Checks 2026-08-24: 80 tests / 276 assertions, Pint, svelte-check, oxlint,
 Prettier, build. `down()` de `000007` verde.
+
+---
+
+## V4 — Caja (en curso)
+
+**Frase:** cada cajero conoce y opera su efectivo real; Yape, Plin, tarjeta y
+transferencia bancaria no alteran esa posición.
+
+- [ ] Ledger físico `cashbox_movements`; saldo derivado exacto por cajero;
+      vista diaria con apertura, entradas, salidas, transferencias y cierre.
+- [ ] Ingreso manual, gasto `OUT-`, Vuelto como hecho nuevo y transferencia
+      `CTX-` con dos movimientos; fecha Lima del servidor e idempotencia.
+- [ ] Reversiones con motivo, actor y timestamp; locks antes de toda salida y
+      ninguna operación puede dejar una caja negativa.
+- [ ] `/cashbox` entrega día, operaciones en rango y mes; `view/manage` propios
+      y `supervise` de otro cajero sólo lectura, sin filtrar el saldo por sede.
+- [ ] PostgreSQL protege montos, estados, dueños, direcciones, FKs y claves de
+      solicitud; tests cubren replay, colisiones, concurrencia lógica y permisos.
+
+No crea sesiones, apertura/cierre mutable, backdating, rendiciones, ventas ni
+CPE. V5 enlazará sólo el monto `cash` de `sale_payments`; los demás medios nunca
+entrarán al ledger.
 
 ---
 

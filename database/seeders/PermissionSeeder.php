@@ -50,6 +50,7 @@ final class PermissionSeeder extends Seeder
         'Caja' => [
             'cashbox.view' => 'Ver la caja propia.',
             'cashbox.manage' => 'Registrar ingresos, egresos y transferencias de efectivo.',
+            'cashbox.supervise' => 'Consultar la caja de otros cajeros sin operar en su nombre.',
         ],
         'Fiscal' => [
             'fiscal.view' => 'Ver la cola de CPE y artefactos.',

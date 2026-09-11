@@ -28,6 +28,6 @@
         "vite": "^8.1.4"
     },
     "dependencies": {
-        "@lumi-ui/svelte": "file:../lumi-ui"
+        "@lumi-ui/svelte": "0.4.0"
     }
 }

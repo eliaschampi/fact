@@ -5,12 +5,13 @@ const moneyFormatter = new Intl.NumberFormat('es-PE', {
 });
 
 function cents(value: string | number): number {
-    const match = String(value)
-        .trim()
-        .match(/^-?(\d+)(?:\.(\d{1,2}))?$/);
+    const normalized = String(value).trim();
+    const match = normalized.match(/^-?(\d+)(?:\.(\d{1,2}))?$/);
     if (!match) return 0;
 
-    return Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+    const amount = Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+
+    return normalized.startsWith('-') ? -amount : amount;
 }
 
 function decimal(value: number): string {

@@ -78,6 +78,15 @@
                     color="secondary"
                 />
             {/if}
+            {#if can('cashbox.view')}
+                <QuickAccessCard
+                    href="/cashbox"
+                    title="Caja"
+                    description="Tu posición continua de efectivo."
+                    icon="wallet"
+                    color="success"
+                />
+            {/if}
         </div>
     {/if}
 </div>

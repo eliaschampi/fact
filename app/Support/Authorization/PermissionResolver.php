@@ -5,7 +5,10 @@ namespace App\Support\Authorization;
 use App\Models\AuthAccount;
 use App\Models\Permission;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 final class PermissionResolver
 {
@@ -34,6 +37,51 @@ final class PermissionResolver
         $this->request->attributes->set($cacheKey, $names);
 
         return $names;
+    }
+
+    /** @return Builder<User> */
+    public function usersWithEffectivePermission(string $permissionName): Builder
+    {
+        return $this->activeUsers()
+            ->where(function (Builder $query) use ($permissionName): void {
+                $query->where('is_super_admin', true)
+                    ->orWhere(function (Builder $query) use ($permissionName): void {
+                        $query->whereHas(
+                            'permissions',
+                            fn (Builder $permission) => $permission->where('name', $permissionName),
+                        )->whereHas(
+                            'role.permissionScopes',
+                            fn (Builder $permission) => $permission->where('name', $permissionName),
+                        );
+                    });
+            });
+    }
+
+    public function requestedCashier(AuthAccount $account, User $actor): User
+    {
+        $requested = $this->request->query('cashier');
+
+        if (! is_string($requested) || $requested === '' || $requested === $actor->code) {
+            return $actor;
+        }
+
+        Gate::forUser($account)->authorize('cashbox.supervise');
+
+        return $this->cashiersForSupervision()->findOrFail($requested);
+    }
+
+    /** @return Builder<User> */
+    public function cashiersForSupervision(): Builder
+    {
+        return User::query()->where(function (Builder $query): void {
+            $query->whereIn(
+                'users.code',
+                $this->usersWithEffectivePermission('cashbox.manage')->select('users.code'),
+            )->orWhereIn(
+                'users.code',
+                DB::table('cashbox_movements')->select('cashier_user_code'),
+            );
+        });
     }
 
     /**
@@ -83,5 +131,14 @@ final class PermissionResolver
         }
 
         return $user;
+    }
+
+    /** @return Builder<User> */
+    private function activeUsers(): Builder
+    {
+        return User::query()
+            ->where('users.is_active', true)
+            ->whereHas('authAccount', fn (Builder $account) => $account->where('is_active', true))
+            ->whereHas('role', fn (Builder $role) => $role->where('is_active', true));
     }
 }

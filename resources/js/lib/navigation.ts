@@ -44,6 +44,12 @@ export const APP_NAVIGATION: readonly NavigationItem[] = [
         requiresBranch: true,
     },
     {
+        label: 'Caja',
+        href: '/cashbox',
+        icon: 'wallet',
+        permission: 'cashbox.view',
+    },
+    {
         label: 'Sedes',
         href: '/branches',
         icon: 'building2',

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\CashboxController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventoryController;
@@ -45,4 +46,20 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         ->name('purchases.cancel');
 
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+
+    Route::get('/cashbox', [CashboxController::class, 'index'])->name('cashbox.index');
+    Route::post('/cashbox/incomes', [CashboxController::class, 'storeIncome'])
+        ->name('cashbox.incomes.store');
+    Route::post('/cashbox/outflows', [CashboxController::class, 'storeOutflow'])
+        ->name('cashbox.outflows.store');
+    Route::post('/cashbox/outflows/{cashOutflow}/returns', [CashboxController::class, 'storeReturn'])
+        ->name('cashbox.outflows.returns.store');
+    Route::post('/cashbox/transfers', [CashboxController::class, 'storeTransfer'])
+        ->name('cashbox.transfers.store');
+    Route::post('/cashbox/incomes/{cashboxMovement}/reverse', [CashboxController::class, 'reverseIncome'])
+        ->name('cashbox.incomes.reverse');
+    Route::post('/cashbox/outflows/{cashOutflow}/reverse', [CashboxController::class, 'reverseOutflow'])
+        ->name('cashbox.outflows.reverse');
+    Route::post('/cashbox/transfers/{cashboxTransfer}/reverse', [CashboxController::class, 'reverseTransfer'])
+        ->name('cashbox.transfers.reverse');
 });

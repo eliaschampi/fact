@@ -148,7 +148,7 @@
                                 <InfoItem
                                     icon="building2"
                                     iconColor="secondary"
-                                    label="Código de establecimiento SUNAT"
+                                    label="CE SUNAT"
                                     value={branch.establishment}
                                 />
                             {/if}
